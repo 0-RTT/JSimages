@@ -2,12 +2,12 @@ export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url);
     const domain = env.DOMAIN;
-    const DATABASE = env.DATABASE;
+    const DATABASE = env[env.DATABASE];
     const USERNAME = env.USERNAME;
     const PASSWORD = env.PASSWORD;
     const adminPath = env.ADMIN_PATH;
     const enableAuth = env.ENABLE_AUTH === 'true';
-    const R2_BUCKET = env.R2_BUCKET;
+    const R2_BUCKET = env[env.R2_BUCKET];
     const maxSizeMB = env.MAX_SIZE_MB ? parseInt(env.MAX_SIZE_MB, 10) : 10;
     const maxSize = maxSizeMB * 1024 * 1024;
 
