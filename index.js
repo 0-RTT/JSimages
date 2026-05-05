@@ -95,6 +95,8 @@ export default {
     switch (pathname) {
       case '/':
         return await handleRootRequest(request, config);
+      case '/api/stats':
+        return await handleStatsRequest(config);
       case `/${config.adminPath}`:
         return await handleAdminRequest(request, config);
       case '/upload':
@@ -153,14 +155,20 @@ async function handleRootRequest(request, config) {
           align-items: center;
           height: 100vh;
           position: relative;
+          background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #4facfe);
+          background-size: 400% 400%;
+          animation: gradientShift 60s ease infinite;
+      }
+      @keyframes gradientShift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
       }
       .card {
-          background-color: rgba(255, 255, 255, 0.9);
-          backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
+          background: rgba(255, 255, 255, 0.95);
           border: none;
           border-radius: 16px;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
           padding: 30px;
           width: 90%;
           max-width: 480px;
@@ -177,6 +185,10 @@ async function handleRootRequest(request, config) {
           background-clip: text;
           margin-bottom: 20px;
           letter-spacing: 0.5px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
       }
       .uniform-height {
           margin-top: 20px;
@@ -320,7 +332,7 @@ async function handleRootRequest(request, config) {
           margin-right: 5px;
       }
       .project-link {
-          font-size: 14px;
+          font-size: 13px;
           text-align: center;
           margin-top: 15px;
           margin-bottom: 0;
@@ -335,6 +347,16 @@ async function handleRootRequest(request, config) {
       .project-link a:hover {
           color: #764ba2;
           text-decoration: underline;
+      }
+      .stats-line {
+          font-size: 13px;
+          text-align: center;
+          margin-top: 10px;
+          margin-bottom: 0;
+          color: #999;
+      }
+      .stats-line i {
+          margin-right: 4px;
       }
       textarea.form-control {
           max-height: 200px;
@@ -480,9 +502,48 @@ async function handleRootRequest(request, config) {
               padding: 15px;
           }
       }
+      #dragOverlay {
+          display: none;
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.35);
+          z-index: 9999;
+          justify-content: center;
+          align-items: center;
+          backdrop-filter: blur(3px);
+          -webkit-backdrop-filter: blur(3px);
+      }
+      #dragOverlay::before {
+          content: '';
+          position: absolute;
+          inset: 50px;
+          border: 3px dashed rgba(255,255,255,0.5);
+          border-radius: 24px;
+          pointer-events: none;
+      }
+      #dragOverlay.active {
+          display: flex;
+      }
+      #dragOverlay .drag-hint {
+          text-align: center;
+          color: white;
+          pointer-events: none;
+      }
+      #dragOverlay .drag-hint i {
+          font-size: 56px;
+          margin-bottom: 16px;
+          opacity: 0.8;
+      }
+      #dragOverlay .drag-hint p {
+          font-size: 22px;
+          margin: 0;
+          font-weight: 500;
+          opacity: 0.8;
+      }
   </style>
 </head>
 <body>
+      <div id="dragOverlay"><div class="drag-hint"><i class="fas fa-cloud-upload-alt"></i><p>拖拽文件到此处上传</p></div></div>
       <div class="card">
       <div class="title">Media-FishByte</div>
       <button type="button" class="btn" id="viewCacheBtn" title="查看历史记录"><i class="fas fa-clock"></i></button>
@@ -508,6 +569,7 @@ async function handleRootRequest(request, config) {
           </form>
       </div>
       <p class="project-link">项目参考来源 - <a href="https://github.com/0-RTT/JSimages" target="_blank" rel="noopener noreferrer">0-RTT/JSimages</a></p>
+      <p class="stats-line" id="statsLine"><i class="fas fa-database"></i> 加载统计中...</p>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-fileinput/5.2.7/js/fileinput.min.js" integrity="sha512-CCLv901EuJXf3k0OrE5qix8s2HaCDpjeBERR2wVHUwzEIc7jfiK9wqJFssyMOc1lJ/KvYKsDenzxbDTAQ4nh1w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-fileinput/5.2.7/js/locales/zh.min.js" integrity="sha512-IizKWmZY3aznnbFx/Gj8ybkRyKk7wm+d7MKmEgOMRQDN1D1wmnDRupfXn6X04pwIyKFWsmFVgrcl0j6W3Z5FDQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -539,6 +601,7 @@ async function handleRootRequest(request, config) {
         let isCacheVisible = false;
         let resettingUnsupported = false;
         initFileInput();
+        fetchStats();
 
         function initFileInput() {
           $("#fileInput").fileinput({
@@ -555,6 +618,18 @@ async function handleRootRequest(request, config) {
             $(this).closest('.file-input').find('input[type="file"]').attr('accept', 'image/*,video/*,audio/*');
           }).on('filebatchselected', handleFileSelection)
             .on('fileclear', handleFileClear);
+        }
+
+        async function fetchStats() {
+          try {
+            const res = await fetch('/api/stats');
+            const data = await res.json();
+            if (data.count !== undefined) {
+              $('#statsLine').html('<i class="fas fa-database"></i> 已上传 ' + data.count + ' 个文件');
+            }
+          } catch(e) {
+            $('#statsLine').html('<i class="fas fa-database"></i> 统计不可用');
+          }
         }
 
         async function handleFileSelection() {
@@ -793,23 +868,28 @@ async function handleRootRequest(request, config) {
           }
         });
 
-        const $card = $('.card');
-        $card.on('dragover', function(e) {
+        let dragCounter = 0;
+        $(document).on('dragenter', function(e) {
           e.preventDefault();
-          e.stopPropagation();
-          $(this).css('background-color', 'rgba(255, 255, 255, 0.95)');
+          dragCounter++;
+          if (dragCounter === 1) {
+            $('#dragOverlay').addClass('active');
+          }
         });
-
-        $card.on('dragleave', function(e) {
+        $(document).on('dragover', function(e) {
           e.preventDefault();
-          e.stopPropagation();
-          $(this).css('background-color', 'rgba(255, 255, 255, 0.9)');
         });
-
-        $card.on('drop', function(e) {
+        $(document).on('dragleave', function(e) {
           e.preventDefault();
-          e.stopPropagation();
-          $(this).css('background-color', 'rgba(255, 255, 255, 0.9)');
+          dragCounter--;
+          if (dragCounter === 0) {
+            $('#dragOverlay').removeClass('active');
+          }
+        });
+        $(document).on('drop', function(e) {
+          e.preventDefault();
+          dragCounter = 0;
+          $('#dragOverlay').removeClass('active');
           const files = e.originalEvent.dataTransfer.files;
           if (files.length > 0) {
             const dataTransfer = new DataTransfer();
@@ -979,6 +1059,15 @@ async function handleRootRequest(request, config) {
 `, 'text/html;charset=UTF-8', CACHE_CONFIG.HTML);
   await cache.put(cacheKey, response.clone());
   return response;
+}
+
+async function handleStatsRequest(config) {
+  try {
+    const result = await config.database.prepare('SELECT COUNT(*) as count FROM media').first();
+    return jsonResponse({ count: result.count });
+  } catch (error) {
+    return jsonResponse({ count: 0 }, 500);
+  }
 }
 
 async function handleAdminRequest(request, config) {
