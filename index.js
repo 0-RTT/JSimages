@@ -148,6 +148,48 @@ async function handleRootRequest(request, config) {
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.css" integrity="sha512-6S2HWzVFxruDlZxI3sXOZZ4/eJ8AcxkQH1+JjSe/ONCEqR9L4Ysq5JdT5ipqtzU7WHalNwzwBv+iE51gNHJNqQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
+  :root {
+      --bg-gradient: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #4facfe);
+      --card-bg: rgba(255, 255, 255, 0.95);
+      --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+      --title-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --text-primary: #333;
+      --text-secondary: #555;
+      --text-muted: #999;
+      --accent: #667eea;
+      --accent-hover: #764ba2;
+      --accent-light: rgba(102, 126, 234, 0.1);
+      --accent-light-hover: rgba(102, 126, 234, 0.05);
+      --cache-bg: white;
+      --cache-border: rgba(102, 126, 234, 0.1);
+      --danger: #e74c3c;
+      --danger-light: rgba(231, 76, 60, 0.1);
+      --scrollbar-track: transparent;
+      --scrollbar-thumb: rgba(0,0,0,0.15);
+      --overlay-bg: rgba(0, 0, 0, 0.35);
+      --thumbnail-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  [data-theme="dark"] {
+      --bg-gradient: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #1a1a3e);
+      --card-bg: rgba(30, 30, 50, 0.95);
+      --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      --title-gradient: linear-gradient(135deg, #a78bfa 0%, #c084fc 100%);
+      --text-primary: #e0e0e0;
+      --text-secondary: #b0b0b0;
+      --text-muted: #888;
+      --accent: #a78bfa;
+      --accent-hover: #c084fc;
+      --accent-light: rgba(167, 139, 250, 0.15);
+      --accent-light-hover: rgba(167, 139, 250, 0.08);
+      --cache-bg: #2a2a45;
+      --cache-border: rgba(167, 139, 250, 0.15);
+      --danger: #ef4444;
+      --danger-light: rgba(239, 68, 68, 0.15);
+      --scrollbar-track: transparent;
+      --scrollbar-thumb: rgba(255,255,255,0.2);
+      --overlay-bg: rgba(0, 0, 0, 0.55);
+      --thumbnail-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
       body {
           margin: 0;
           display: flex;
@@ -155,7 +197,7 @@ async function handleRootRequest(request, config) {
           align-items: center;
           height: 100vh;
           position: relative;
-          background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #4facfe);
+          background: var(--bg-gradient);
           background-size: 400% 400%;
           animation: gradientShift 60s ease infinite;
       }
@@ -165,10 +207,10 @@ async function handleRootRequest(request, config) {
           100% { background-position: 0% 50%; }
       }
       .card {
-          background: rgba(255, 255, 255, 0.95);
+          background: var(--card-bg);
           border: none;
           border-radius: 16px;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+          box-shadow: var(--card-shadow);
           padding: 30px;
           width: 90%;
           max-width: 480px;
@@ -179,16 +221,37 @@ async function handleRootRequest(request, config) {
       .title {
           font-size: 28px;
           font-weight: 700;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: var(--title-gradient);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
-          margin-bottom: 20px;
+          margin-bottom: 0;
           letter-spacing: 0.5px;
+          flex: 1;
+          text-align: center;
+      }
+      .card-header-row {
           display: flex;
           align-items: center;
-          justify-content: center;
-          gap: 10px;
+          justify-content: space-between;
+          margin-bottom: 20px;
+          gap: 12px;
+      }
+      #themeToggle {
+          background: none;
+          border: none;
+          color: var(--accent);
+          opacity: 0.5;
+          cursor: pointer;
+          font-size: 22px;
+          transition: all 0.3s ease;
+          padding: 0;
+          line-height: 1;
+          flex-shrink: 0;
+      }
+      #themeToggle:hover {
+          opacity: 1;
+          transform: scale(1.1);
       }
       .uniform-height {
           margin-top: 20px;
@@ -197,18 +260,19 @@ async function handleRootRequest(request, config) {
           margin-bottom: 30px;
       }
       #viewCacheBtn {
-          position: absolute;
-          top: 15px;
-          right: 15px;
           background: none;
           border: none;
-          color: rgba(102, 126, 234, 0.5);
+          color: var(--accent);
+          opacity: 0.5;
           cursor: pointer;
           font-size: 22px;
           transition: all 0.3s ease;
+          padding: 0;
+          line-height: 1;
+          flex-shrink: 0;
       }
       #viewCacheBtn:hover {
-          color: #667eea;
+          opacity: 1;
           transform: scale(1.1);
       }
       #cacheContent {
@@ -216,6 +280,16 @@ async function handleRootRequest(request, config) {
           max-height: 250px;
           border-radius: 8px;
           overflow-y: auto;
+      }
+      #cacheContent::-webkit-scrollbar {
+          width: 4px;
+      }
+      #cacheContent::-webkit-scrollbar-track {
+          background: transparent;
+      }
+      #cacheContent::-webkit-scrollbar-thumb {
+          background: var(--scrollbar-thumb);
+          border-radius: 2px;
       }
       .cache-title {
           text-align: left;
@@ -231,13 +305,14 @@ async function handleRootRequest(request, config) {
           text-align: left;
           padding: 10px 12px;
           margin-bottom: 8px;
-          background: white;
-          border: 1px solid rgba(102, 126, 234, 0.1);
+          background: var(--cache-bg);
+          border: 1px solid var(--cache-border);
           gap: 10px;
       }
       .cache-item:hover {
-          background-color: rgba(102, 126, 234, 0.05);
-          border-color: rgba(102, 126, 234, 0.3);
+          background-color: var(--accent-light-hover);
+          border-color: var(--accent);
+          opacity: 0.9;
       }
       .cache-ext {
           flex-shrink: 0;
@@ -267,14 +342,14 @@ async function handleRootRequest(request, config) {
       .cache-name {
           font-size: 13px;
           font-weight: 500;
-          color: #333;
+          color: var(--text-primary);
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
       }
       .cache-url {
           font-size: 11px;
-          color: #999;
+          color: var(--text-muted);
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
@@ -285,8 +360,8 @@ async function handleRootRequest(request, config) {
           width: 32px;
           height: 32px;
           border: none;
-          background: rgba(102, 126, 234, 0.1);
-          color: #667eea;
+          background: var(--accent-light);
+          color: var(--accent);
           border-radius: 6px;
           cursor: pointer;
           font-size: 14px;
@@ -296,7 +371,7 @@ async function handleRootRequest(request, config) {
           transition: all 0.2s ease;
       }
       .cache-copy:hover {
-          background: #667eea;
+          background: var(--accent);
           color: white;
       }
       .cache-header {
@@ -306,12 +381,12 @@ async function handleRootRequest(request, config) {
           margin-bottom: 12px;
           font-size: 14px;
           font-weight: 500;
-          color: #555;
+          color: var(--text-secondary);
       }
       .cache-clear-all {
           background: none;
           border: none;
-          color: #e74c3c;
+          color: var(--danger);
           cursor: pointer;
           font-size: 13px;
           padding: 4px 8px;
@@ -319,7 +394,7 @@ async function handleRootRequest(request, config) {
           transition: all 0.2s ease;
       }
       .cache-clear-all:hover {
-          background: rgba(231, 76, 60, 0.1);
+          background: var(--danger-light);
       }
       .upload-hint {
           color: #999;
@@ -328,7 +403,7 @@ async function handleRootRequest(request, config) {
           line-height: 1.6;
       }
       .upload-hint i {
-          color: #667eea;
+          color: var(--accent);
           margin-right: 5px;
       }
       .project-link {
@@ -386,7 +461,7 @@ async function handleRootRequest(request, config) {
       .progress-text {
           font-size: 14px;
           font-weight: 500;
-          color: #667eea;
+          color: var(--accent);
           letter-spacing: 0.5px;
       }
       .thumbnail-container {
@@ -424,12 +499,12 @@ async function handleRootRequest(request, config) {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: var(--title-gradient);
           color: white;
           font-size: 24px;
       }
       .btn-primary {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+          background: var(--title-gradient) !important;
           border: none !important;
           color: white !important;
           border-radius: 8px !important;
@@ -446,17 +521,17 @@ async function handleRootRequest(request, config) {
           box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3) !important;
       }
       .file-drop-zone {
-          border: 2px dashed #667eea !important;
+          border: 2px dashed var(--accent) !important;
           border-radius: 12px !important;
-          background: rgba(102, 126, 234, 0.05) !important;
+          background: var(--accent-light) !important;
           transition: all 0.3s ease !important;
       }
       .file-drop-zone:hover {
-          border-color: #764ba2 !important;
-          background: rgba(102, 126, 234, 0.1) !important;
+          border-color: var(--accent-hover) !important;
+          background: var(--accent-light-hover) !important;
       }
       .file-drop-zone-title {
-          color: #667eea !important;
+          color: var(--accent) !important;
           font-weight: 500 !important;
       }
       .btn-danger, .fileinput-remove {
@@ -491,7 +566,7 @@ async function handleRootRequest(request, config) {
           .title {
               font-size: 24px;
           }
-          #viewCacheBtn {
+          #themeToggle, #viewCacheBtn {
               font-size: 20px;
           }
           .btn-primary, .btn-danger, .btn-light {
@@ -506,7 +581,7 @@ async function handleRootRequest(request, config) {
           display: none;
           position: fixed;
           inset: 0;
-          background: rgba(0, 0, 0, 0.35);
+          background: var(--overlay-bg);
           z-index: 9999;
           justify-content: center;
           align-items: center;
@@ -545,8 +620,11 @@ async function handleRootRequest(request, config) {
 <body>
       <div id="dragOverlay"><div class="drag-hint"><i class="fas fa-cloud-upload-alt"></i><p>拖拽文件到此处上传</p></div></div>
       <div class="card">
-      <div class="title">Media-FishByte</div>
-      <button type="button" class="btn" id="viewCacheBtn" title="查看历史记录"><i class="fas fa-clock"></i></button>
+      <div class="card-header-row">
+        <div class="title">Media-FishByte</div>
+        <button type="button" class="btn" id="themeToggle" title="切换主题"><i class="fas fa-sun"></i></button>
+        <button type="button" class="btn" id="viewCacheBtn" title="查看最近上传记录"><i class="fas fa-clock"></i></button>
+      </div>
       <div class="card-body">
           <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
               <div class="file-input-container">
@@ -624,13 +702,36 @@ async function handleRootRequest(request, config) {
           try {
             const res = await fetch('/api/stats');
             const data = await res.json();
-            if (data.count !== undefined) {
-              $('#statsLine').html('<i class="fas fa-database"></i> 已上传 ' + data.count + ' 个文件');
+            if (data.total !== undefined) {
+              $('#statsLine').html(
+                '<i class="fas fa-image"></i> ' + data.images +
+                ' &nbsp;<i class="fas fa-video"></i> ' + data.videos +
+                ' &nbsp;<i class="fas fa-music"></i> ' + data.audio +
+                ' &nbsp;<i class="fas fa-file"></i> ' + data.other +
+                ' &nbsp;| 共 ' + data.total + ' 个文件'
+              );
             }
           } catch(e) {
-            $('#statsLine').html('<i class="fas fa-database"></i> 统计不可用');
+            $('#statsLine').html('统计不可用');
           }
         }
+
+        // theme toggle
+        function setTheme(theme) {
+          document.documentElement.setAttribute('data-theme', theme);
+          localStorage.setItem('theme', theme);
+          $('#themeToggle i').attr('class', theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun');
+        }
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+          setTheme(savedTheme);
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          setTheme('dark');
+        }
+        $('#themeToggle').on('click', function() {
+          const current = document.documentElement.getAttribute('data-theme');
+          setTheme(current === 'dark' ? 'light' : 'dark');
+        });
 
         async function handleFileSelection() {
           if (isCacheVisible) {
@@ -1063,10 +1164,23 @@ async function handleRootRequest(request, config) {
 
 async function handleStatsRequest(config) {
   try {
-    const result = await config.database.prepare('SELECT COUNT(*) as count FROM media').first();
-    return jsonResponse({ count: result.count });
+    const result = await config.database.prepare(`
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN url LIKE '%/image\\_%' ESCAPE '\\' THEN 1 ELSE 0 END) as images,
+        SUM(CASE WHEN url LIKE '%/video\\_%' ESCAPE '\\' THEN 1 ELSE 0 END) as videos,
+        SUM(CASE WHEN url LIKE '%/audio\\_%' ESCAPE '\\' THEN 1 ELSE 0 END) as audio
+      FROM media
+    `).first();
+    return jsonResponse({
+      total: result.total,
+      images: result.images || 0,
+      videos: result.videos || 0,
+      audio: result.audio || 0,
+      other: result.total - (result.images || 0) - (result.videos || 0) - (result.audio || 0)
+    });
   } catch (error) {
-    return jsonResponse({ count: 0 }, 500);
+    return jsonResponse({ total: 0, images: 0, videos: 0, audio: 0, other: 0 }, 500);
   }
 }
 
