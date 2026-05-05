@@ -554,9 +554,12 @@ async function handleRootRequest(request, config) {
 
     
       $(document).ready(function() {
+        toastr.options.timeOut = 3000;
+        toastr.options.progressBar = true;
         let originalImageURLs = [];
         let thumbnailData = [];
         let isCacheVisible = false;
+        let resettingUnsupported = false;
         initFileInput();
 
         function initFileInput() {
@@ -567,7 +570,6 @@ async function handleRootRequest(request, config) {
             removeClass: "btn btn-danger",
             showUpload: false,
             showPreview: false,
-            allowedFileTypes: ['image', 'video', 'audio'],
             browseLabel: "选择",
             msgPlaceholder: "点击右侧按钮上传媒体文件"
           }).on('fileinitialized', function() {
@@ -590,6 +592,13 @@ async function handleRootRequest(request, config) {
           }
           if (rejectedFiles.length > 0) {
             toastr.warning('不支持的文件类型: ' + rejectedFiles.join(', '));
+          }
+          if (rejectedFiles.length > 0 && allowedFiles.length === 0) {
+            setTimeout(() => {
+              resettingUnsupported = true;
+              $('#fileInput').fileinput('clear');
+            }, 0);
+            return;
           }
           for (let i = 0; i < allowedFiles.length; i++) {
             const file = allowedFiles[i];
@@ -746,10 +755,7 @@ async function handleRootRequest(request, config) {
               $('#fileLink').val(originalImageURLs.join('\\n\\n'));
               $('.form-group').show();
               adjustTextareaHeight($('#fileLink')[0]);
-              toastr.success('上传成功! 点击下方按钮复制链接', '', {
-                timeOut: 3000,
-                progressBar: true
-              });
+              toastr.success('上传成功！请自行复制链接');
               saveToLocalCache(responseData.data, file.name, fileHash);
             }
           } catch (error) {
@@ -848,6 +854,10 @@ async function handleRootRequest(request, config) {
         });
     
         function handleFileClear(event) {
+          if (resettingUnsupported) {
+            resettingUnsupported = false;
+            return;
+          }
           $('#fileLink').val('');
           adjustTextareaHeight($('#fileLink')[0]);
           hideButtonsAndTextarea();
@@ -869,7 +879,7 @@ async function handleRootRequest(request, config) {
         function copyToClipboardWithToastr(text) {
           if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(text).then(() => {
-              toastr.success('已复制到剪贴板', '', { timeOut: 300 });
+              toastr.success('已复制到剪贴板');
             }).catch(() => {
               toastr.error('复制失败');
             });
@@ -880,7 +890,7 @@ async function handleRootRequest(request, config) {
             textarea.select();
             try {
               document.execCommand('copy');
-              toastr.success('已复制到剪贴板', '', { timeOut: 300 });
+              toastr.success('已复制到剪贴板');
             } catch (err) {
               toastr.error('复制失败');
             }
@@ -919,19 +929,25 @@ async function handleRootRequest(request, config) {
             isCacheVisible = false;
           } else {
             if (cacheData.length > 0) {
-              let html = '<div class="cache-header"><span>历史记录 <small style="font-weight:400;color:#999;font-size:12px">最多10条</small></span><button class="cache-clear-all">清除全部</button></div>';
+              let html = '<div class="cache-header"><span>历史记录 <small style="font-weight:400;color:#999;font-size:12px">最多10条</small></span><button class="cache-clear-all" type="button">清除全部</button></div>';
               html += cacheData.map((item) => {
                 const type = getCacheType(item.fileName);
                 const truncatedUrl = item.url.length > 50 ? item.url.substring(0, 50) + '...' : item.url;
                 let leftHtml;
                 if (type === 'image') {
-                  leftHtml = '<img class="cache-thumb" src="' + item.url + '" alt="" loading="lazy">';
+                  leftHtml = '<span class="cache-ext" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);position:relative;overflow:hidden">' +
+                    '<i class="fas fa-image"></i>' +
+                    '<img class="cache-thumb" src="' + item.url + '" alt="" loading="lazy" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.style.display=\\'none\\'">' +
+                    '</span>';
                 } else if (type === 'video') {
-                  leftHtml = '<span class="cache-ext cache-ext-video"><i class="fas fa-play-circle"></i></span>';
+                  leftHtml = '<span class="cache-ext cache-ext-video" style="position:relative;overflow:hidden">' +
+                    '<i class="fas fa-play-circle"></i>' +
+                    '<video class="cache-thumb" src="' + item.url + '" preload="metadata" muted style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.style.display=\\'none\\'"></video>' +
+                    '</span>';
                 } else if (type === 'audio') {
                   leftHtml = '<span class="cache-ext cache-ext-audio"><i class="fas fa-music"></i></span>';
                 } else {
-                  leftHtml = '<span class="cache-ext cache-ext-other"><i class="fas fa-file"></i></span>';
+                  leftHtml = '<span class="cache-ext" style="background:linear-gradient(135deg,#a8a8a8 0%,#c9c9c9 100%)"><i class="fas fa-file"></i></span>';
                 }
                 return '<div class="cache-item" data-url="' + item.url + '">' +
                   leftHtml +
@@ -952,22 +968,17 @@ async function handleRootRequest(request, config) {
 
         $(document).on('click', '.cache-item', function(e) {
           if ($(e.target).closest('.cache-copy').length) return;
-          const url = $(this).data('url');
-          originalImageURLs = [];
-          $('#fileLink').val('');
-          originalImageURLs.push(url);
-          $('#fileLink').val(originalImageURLs.map(url => url.trim()).join('\\n\\n'));
-          $('.form-group').show();
-          adjustTextareaHeight($('#fileLink')[0]);
         });
 
         $(document).on('click', '.cache-copy', function(e) {
+          e.preventDefault();
           e.stopPropagation();
           const url = $(this).closest('.cache-item').data('url');
           copyToClipboardWithToastr(url);
         });
 
-        $(document).on('click', '.cache-clear-all', function() {
+        $(document).on('click', '.cache-clear-all', function(e) {
+          e.preventDefault();
           if (!confirm('确定要清除全部历史记录吗？')) return;
           localStorage.removeItem('uploadCache');
           $('#cacheContent').empty().html('<div style="text-align:center;color:#999;padding:20px;">还没有记录哦！</div>');
