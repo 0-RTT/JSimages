@@ -1,0 +1,20 @@
+name = "media-fishbyte"
+main = "index.js"
+compatibility_date = "2026-05-05"
+
+[vars]
+DOMAIN = "media.fishbyte.cc"
+USERNAME = "paperfish233"
+PASSWORD = "qwerty8023"
+ADMIN_PATH = "admin"
+ENABLE_AUTH = "true"
+MAX_SIZE_MB = "20"
+
+[[r2_buckets]]
+binding = "SB"
+bucket_name = "media-fishbyte-storage"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "media-fishbyte-database"
+database_id = "592d015a-c700-4dd0-8dfa-1843383b4eec"
