@@ -838,12 +838,12 @@ async function handleRootRequest(request, config) {
             if (type === 'image') {
                 thumbnailContent = '<span style="display:block;width:100%;height:100%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);position:relative;overflow:hidden">' +
                     '<i class="fas fa-image" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.4);font-size:24px;z-index:0"></i>' +
-                    '<img src="' + url + '" alt="thumbnail" loading="lazy" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onload="this.parentNode.querySelector(\\'i\\').style.display=\\'none\\'" onerror="this.style.display=\\'none\\'">' +
+                    '<img src="' + url + '" alt="thumbnail" loading="lazy" draggable="false" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onload="this.parentNode.querySelector(\\'i\\').style.display=\\'none\\'" onerror="this.style.display=\\'none\\'">' +
                     '</span>';
             } else if (type === 'video') {
                 thumbnailContent = '<span style="display:block;width:100%;height:100%;background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);position:relative;overflow:hidden">' +
                     '<i class="fas fa-play-circle" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.4);font-size:24px;z-index:0"></i>' +
-                    '<video src="' + url + '" muted playsinline preload="metadata" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.style.display=\\'none\\'"></video>' +
+                    '<video src="' + url + '" muted playsinline preload="metadata" draggable="false" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.style.display=\\'none\\'"></video>' +
                     '</span>';
             } else if (type === 'audio') {
                 thumbnailContent = '<div class="file-icon"><i class="fas fa-music"></i></div>';
@@ -875,12 +875,12 @@ async function handleRootRequest(request, config) {
             if (file.type.startsWith('image/')) {
                 thumbnailContent = '<span style="display:block;width:100%;height:100%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);position:relative;overflow:hidden">' +
                     '<i class="fas fa-image" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.4);font-size:24px;z-index:0"></i>' +
-                    '<img src="' + previewUrl + '" alt="thumbnail" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onload="this.parentNode.querySelector(\\'i\\').style.display=\\'none\\'" onerror="this.style.display=\\'none\\'">' +
+                    '<img src="' + previewUrl + '" alt="thumbnail" draggable="false" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onload="this.parentNode.querySelector(\\'i\\').style.display=\\'none\\'" onerror="this.style.display=\\'none\\'">' +
                     '</span>';
             } else if (file.type.startsWith('video/')) {
                 thumbnailContent = '<span style="display:block;width:100%;height:100%;background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);position:relative;overflow:hidden">' +
                     '<i class="fas fa-play-circle" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.4);font-size:24px;z-index:0"></i>' +
-                    '<video src="' + previewUrl + '" muted playsinline preload="metadata" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.style.display=\\'none\\'"></video>' +
+                    '<video src="' + previewUrl + '" muted playsinline preload="metadata" draggable="false" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.style.display=\\'none\\'"></video>' +
                     '</span>';
             } else if (file.type.startsWith('audio/')) {
                 thumbnailContent = '<div class="file-icon"><i class="fas fa-music"></i></div>';
@@ -1639,6 +1639,9 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
       .delete-button.danger {
         background: linear-gradient(135deg, var(--danger) 0%, #c0392b 100%);
       }
+      #preview-button {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      }
       .pagination {
         display: flex;
         justify-content: center;
@@ -1712,6 +1715,47 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
           --sticky-bg: rgba(30, 30, 50, 0.85);
           --hover-shadow: rgba(167, 139, 250, 0.2);
         }
+      }
+      .preview-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.85);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+      }
+      .preview-content {
+        position: relative;
+        max-width: 90vw;
+        max-height: 90vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .preview-content img,
+      .preview-content video {
+        max-width: 90vw;
+        max-height: 90vh;
+        object-fit: contain;
+        border-radius: 8px;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+      }
+      .preview-close {
+        position: fixed;
+        top: 20px;
+        right: 30px;
+        font-size: 36px;
+        color: white;
+        cursor: pointer;
+        opacity: 0.7;
+        transition: opacity 0.3s;
+        z-index: 10000;
+        line-height: 1;
+      }
+      .preview-close:hover {
+        opacity: 1;
       }
       @media (max-width: 768px) {
         body {
@@ -1790,8 +1834,21 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
       const countDisplay = document.getElementById('selected-count');
       countDisplay.textContent = selectedCount;
       const actions = document.getElementById('action-buttons');
+      const previewBtn = document.getElementById('preview-button');
       if (selectedCount > 0) {
         actions.style.display = 'flex';
+        let showPreview = selectedCount === 1;
+        if (showPreview) {
+          if (window.location.search.includes('type=other')) {
+            showPreview = false;
+          } else {
+            const url = Array.from(selectedKeys)[0];
+            const ext = url.split('.').pop().toLowerCase();
+            const PREVIEW_EXTS = ['jpg','jpeg','png','gif','webp','bmp','svg','tiff','mp4','avi','mov','wmv','flv','mkv','webm','mp3','wav','ogg','flac','aac','m4a','wma','opus'];
+            if (!PREVIEW_EXTS.includes(ext)) showPreview = false;
+          }
+        }
+        previewBtn.style.display = showPreview ? '' : 'none';
       } else {
         actions.style.display = 'none';
       }
@@ -1965,7 +2022,35 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
       const btn = document.getElementById('select-all-button');
       btn.textContent = isAllSelected ? '取消全选' : '全选';
     }
-  
+
+    function previewMedia() {
+      if (selectedKeys.size !== 1) return;
+      const url = Array.from(selectedKeys)[0];
+      const container = document.getElementById('preview-container');
+      const ext = url.split('.').pop().toLowerCase();
+      const IMG = ['jpg','jpeg','png','gif','webp','bmp','svg','tiff'];
+      const VID = ['mp4','avi','mov','wmv','flv','mkv','webm'];
+      const AUD = ['mp3','wav','ogg','flac','aac','m4a','wma','opus'];
+      let html;
+      if (IMG.includes(ext)) {
+        html = '<img src="' + url + '" alt="preview">';
+      } else if (VID.includes(ext)) {
+        html = '<video src="' + url + '" controls autoplay></video>';
+      } else if (AUD.includes(ext)) {
+        html = '<div style="text-align:center;padding:40px;color:white"><i class="fas fa-music" style="font-size:80px;opacity:0.5;margin-bottom:20px"></i><br><audio src="' + url + '" controls style="width:300px"></audio></div>';
+      } else {
+        html = '<div style="text-align:center;padding:40px;color:white"><i class="fas fa-file" style="font-size:80px;opacity:0.5;margin-bottom:20px"></i><br><a href="' + url + '" target="_blank" style="color:var(--accent);font-size:16px">打开文件</a></div>';
+      }
+      container.innerHTML = html;
+      document.getElementById('previewOverlay').style.display = 'flex';
+    }
+
+    function closePreview(e) {
+      if (e && e.target !== e.currentTarget) return;
+      document.getElementById('previewOverlay').style.display = 'none';
+      document.getElementById('preview-container').innerHTML = '';
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       const mediaContainers = document.querySelectorAll('.media-container[data-key]');
       const options = {
@@ -2047,6 +2132,7 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
       </div>
       <div class="header-actions">
         <div id="action-buttons">
+          <button id="preview-button" class="delete-button" onclick="previewMedia()" style="display:none">\u9884\u89C8</button>
           <button class="delete-button" onclick="copySelectedUrls()">\u590D\u5236</button>
           <button id="delete-button" class="delete-button danger" onclick="deleteSelectedImages()">\u5220\u9664</button>
         </div>
@@ -2056,13 +2142,19 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
     <div class="gallery">
       ${mediaData.length === 0 ? '<div class="empty-state"><i class="fas fa-cloud-upload-alt"></i><div>\u6682\u65E0\u5A92\u4F53\u6587\u4EF6</div></div>' : mediaHtml}
     </div>
-    ${mediaData.length > 0 ? `
+    ${mediaData.length > 0 && totalPages > 1 ? `
     <div class="pagination">
       <button onclick="goToPage(${page - 1})" ${page <= 1 ? "disabled" : ""}>\u4E0A\u4E00\u9875</button>
       <span class="page-info" data-total="${totalCount.count}">\u7B2C ${page} / ${totalPages} \u9875\uFF08\u5171 ${totalCount.count} \u4E2A\uFF09</span>
       <button onclick="goToPage(${page + 1})" ${page >= totalPages ? "disabled" : ""}>\u4E0B\u4E00\u9875</button>
     </div>
     ` : ""}
+    <div id="previewOverlay" class="preview-overlay" style="display:none" onclick="closePreview(event)">
+      <div class="preview-content">
+        <span class="preview-close" onclick="closePreview()">&times;</span>
+        <div id="preview-container"></div>
+      </div>
+    </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"><\/script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js" integrity="sha512-lbwH47l/tPXJYG9AcFNoJaTMhGvYWhVM9YI43CT+uteTRRaiLCui8snIgyAN8XWgNjNhCqlAUdzZptso6OCoFQ==" crossorigin="anonymous" referrerpolicy="no-referrer"><\/script>
     <script>
