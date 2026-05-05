@@ -794,12 +794,12 @@ async function handleRootRequest(request, config) {
             let thumbnailContent = '';
             if (type === 'image') {
                 thumbnailContent = '<span style="display:block;width:100%;height:100%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);position:relative;overflow:hidden">' +
-                    '<i class="fas fa-image" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.4);font-size:24px"></i>' +
-                    '<img src="' + url + '" alt="thumbnail" loading="lazy" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.style.display=\\'none\\'">' +
+                    '<i class="fas fa-image" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.4);font-size:24px;z-index:0"></i>' +
+                    '<img src="' + url + '" alt="thumbnail" loading="lazy" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onload="this.parentNode.querySelector(\\'i\\').style.display=\\'none\\'" onerror="this.style.display=\\'none\\'">' +
                     '</span>';
             } else if (type === 'video') {
                 thumbnailContent = '<span style="display:block;width:100%;height:100%;background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);position:relative;overflow:hidden">' +
-                    '<i class="fas fa-play-circle" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.4);font-size:24px"></i>' +
+                    '<i class="fas fa-play-circle" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.4);font-size:24px;z-index:0"></i>' +
                     '<video src="' + url + '" muted playsinline preload="metadata" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.style.display=\\'none\\'"></video>' +
                     '</span>';
             } else if (type === 'audio') {
@@ -831,12 +831,12 @@ async function handleRootRequest(request, config) {
             let thumbnailContent = '';
             if (file.type.startsWith('image/')) {
                 thumbnailContent = '<span style="display:block;width:100%;height:100%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);position:relative;overflow:hidden">' +
-                    '<i class="fas fa-image" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.4);font-size:24px"></i>' +
-                    '<img src="' + previewUrl + '" alt="thumbnail" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.style.display=\\'none\\'">' +
+                    '<i class="fas fa-image" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.4);font-size:24px;z-index:0"></i>' +
+                    '<img src="' + previewUrl + '" alt="thumbnail" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onload="this.parentNode.querySelector(\\'i\\').style.display=\\'none\\'" onerror="this.style.display=\\'none\\'">' +
                     '</span>';
             } else if (file.type.startsWith('video/')) {
                 thumbnailContent = '<span style="display:block;width:100%;height:100%;background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);position:relative;overflow:hidden">' +
-                    '<i class="fas fa-play-circle" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.4);font-size:24px"></i>' +
+                    '<i class="fas fa-play-circle" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.4);font-size:24px;z-index:0"></i>' +
                     '<video src="' + previewUrl + '" muted playsinline preload="metadata" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.style.display=\\'none\\'"></video>' +
                     '</span>';
             } else if (file.type.startsWith('audio/')) {
@@ -971,6 +971,8 @@ async function handleRootRequest(request, config) {
 
         let dragCounter = 0;
         $(document).on('dragenter', function(e) {
+          const dt = e.originalEvent.dataTransfer;
+          if (dt.types && !dt.types.includes('Files')) return;
           e.preventDefault();
           dragCounter++;
           if (dragCounter === 1) {
@@ -978,9 +980,13 @@ async function handleRootRequest(request, config) {
           }
         });
         $(document).on('dragover', function(e) {
+          const dt = e.originalEvent.dataTransfer;
+          if (dt.types && !dt.types.includes('Files')) return;
           e.preventDefault();
         });
         $(document).on('dragleave', function(e) {
+          const dt = e.originalEvent.dataTransfer;
+          if (dt.types && !dt.types.includes('Files')) return;
           e.preventDefault();
           dragCounter--;
           if (dragCounter === 0) {
@@ -1106,7 +1112,7 @@ async function handleRootRequest(request, config) {
                 if (type === 'image') {
                   leftHtml = '<span class="cache-ext" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);position:relative;overflow:hidden">' +
                     '<i class="fas fa-image"></i>' +
-                    '<img class="cache-thumb" src="' + item.url + '" alt="" loading="lazy" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.style.display=\\'none\\'">' +
+                    '<img class="cache-thumb" src="' + item.url + '" alt="" loading="lazy" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onload="this.parentNode.querySelector(\\'i\\').style.display=\\'none\\'" onerror="this.style.display=\\'none\\'">' +
                     '</span>';
                 } else if (type === 'video') {
                   leftHtml = '<span class="cache-ext cache-ext-video" style="position:relative;overflow:hidden">' +
@@ -1203,31 +1209,39 @@ async function generateAdminPage(DATABASE, page = 1) {
   const mediaHtml = mediaData.map(({ url }) => {
     const fileExtension = url.split('.').pop().toLowerCase();
     const timestamp = url.split('/').pop().split('.')[0];
-    const mediaType = escapeHtml(fileExtension);
     const escapedUrl = escapeHtml(url);
+    const typeLabel = escapeHtml(fileExtension);
+
     const supportedImageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'];
     const supportedVideoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm'];
     const supportedAudioExtensions = ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma', 'opus'];
-    const isSupported = [...supportedImageExtensions, ...supportedVideoExtensions, ...supportedAudioExtensions].includes(fileExtension);
-    const backgroundStyle = isSupported ? '' : `style="font-size: 50px; display: flex; justify-content: center; align-items: center;"`;
-    const icon = isSupported ? '' : '📁';
+
+    let gradient, iconClass, mediaTag;
+    if (supportedImageExtensions.includes(fileExtension)) {
+      gradient = 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)';
+      iconClass = 'fas fa-image';
+      mediaTag = `<img class="media-img" data-src="${escapedUrl}" alt="" onload="this.parentNode.querySelector('i').style.display='none'" onerror="this.style.display='none'">`;
+    } else if (supportedVideoExtensions.includes(fileExtension)) {
+      gradient = 'linear-gradient(135deg,#f093fb 0%,#f5576c 100%)';
+      iconClass = 'fas fa-play-circle';
+      mediaTag = `<video class="media-img" data-src="${escapedUrl}" muted playsinline preload="none" onloadeddata="this.parentNode.querySelector('i').style.display='none'" onerror="this.style.display='none'"></video>`;
+    } else if (supportedAudioExtensions.includes(fileExtension)) {
+      gradient = 'linear-gradient(135deg,#4facfe 0%,#00f2fe 100%)';
+      iconClass = 'fas fa-music';
+      mediaTag = `<audio class="media-audio" data-src="${escapedUrl}" preload="none" controls onloadeddata="this.parentNode.querySelector('i').style.display='none'" onerror="this.style.display='none'"></audio>`;
+    } else {
+      gradient = 'linear-gradient(135deg,#a8a8a8 0%,#c9c9c9 100%)';
+      iconClass = 'fas fa-file';
+      mediaTag = '';
+    }
+
     return `
-    <div class="media-container" data-key="${escapedUrl}" onclick="toggleImageSelection(this)" ${backgroundStyle}>
-      <div class="skeleton"></div>
-      <div class="media-type">${mediaType}</div>
-      ${supportedVideoExtensions.includes(fileExtension) ? `
-        <video class="gallery-video" preload="none" controls>
-          <source data-src="${escapedUrl}" type="video/${escapeHtml(fileExtension)}">
-          您的浏览器不支持视频标签。
-        </video>
-      ` : supportedAudioExtensions.includes(fileExtension) ? `
-        <audio class="gallery-audio" preload="none" controls>
-          <source data-src="${escapedUrl}" type="audio/${escapeHtml(fileExtension)}">
-          您的浏览器不支持音频标签。
-        </audio>
-      ` : `
-        ${isSupported ? `<img class="gallery-image lazy" data-src="${escapedUrl}" alt="Image">` : icon}
-      `}
+    <div class="media-container" data-key="${escapedUrl}" onclick="toggleImageSelection(this)">
+      <div class="media-thumb" style="background:${gradient}">
+        <i class="${iconClass}" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.4);font-size:36px"></i>
+        ${mediaTag}
+      </div>
+      <div class="media-type">${typeLabel}</div>
       <div class="upload-time">上传时间: ${escapeHtml(new Date(parseInt(timestamp)).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }))}</div>
     </div>
     `;
@@ -1237,8 +1251,9 @@ async function generateAdminPage(DATABASE, page = 1) {
   <!DOCTYPE html>
   <html>
   <head>
-    <title>图库</title>
+    <title>Media-FishByte 图床管理 | 基于CloudFlare的图床服务</title>
     <link rel="icon" href="https://p1.meituan.net/csc/c195ee91001e783f39f41ffffbbcbd484286.ico" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
       * {
@@ -1322,6 +1337,31 @@ async function generateAdminPage(DATABASE, page = 1) {
         background: rgba(102, 126, 234, 0.1);
         box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
       }
+      .media-thumb {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+      .media-img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        z-index: 1;
+      }
+      .media-audio {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        right: 10px;
+        z-index: 1;
+        width: calc(100% - 20px);
+      }
       .media-type {
         position: absolute;
         top: 10px;
@@ -1348,34 +1388,6 @@ async function generateAdminPage(DATABASE, page = 1) {
         color: #555;
         font-size: 12px;
         z-index: 10;
-        display: none;
-      }
-      .gallery-image, .gallery-video {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        transition: opacity 0.4s ease;
-        opacity: 0;
-      }
-      .gallery-image.loaded, .gallery-video.loaded {
-        opacity: 1;
-      }
-      .skeleton {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-        background-size: 200% 100%;
-        animation: shimmer 1.5s infinite;
-        border-radius: 16px;
-      }
-      @keyframes shimmer {
-        0% { background-position: -200% 0; }
-        100% { background-position: 200% 0; }
-      }
-      .skeleton.hidden {
         display: none;
       }
       .footer {
@@ -1732,43 +1744,17 @@ async function generateAdminPage(DATABASE, page = 1) {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
             const container = entry.target;
-            const skeleton = container.querySelector('.skeleton');
-            const video = container.querySelector('video');
-            const audio = container.querySelector('audio');
+            const img = container.querySelector('.media-img[data-src]');
+            const video = container.querySelector('video[data-src]');
+            const audio = container.querySelector('.media-audio[data-src]');
             if (video) {
-              const source = video.querySelector('source');
-              if (source && source.dataset.src) {
-                video.src = source.dataset.src;
-                video.load();
-                video.onloadeddata = () => {
-                  video.classList.add('loaded');
-                  if (skeleton) skeleton.classList.add('hidden');
-                };
-              }
+              video.src = video.dataset.src;
+              video.load();
             } else if (audio) {
-              const source = audio.querySelector('source');
-              if (source && source.dataset.src) {
-                audio.src = source.dataset.src;
-                audio.load();
-                audio.onloadeddata = () => {
-                  audio.classList.add('loaded');
-                  if (skeleton) skeleton.classList.add('hidden');
-                };
-              }
-            } else {
-              const img = container.querySelector('img');
-              if (img && img.dataset.src && !img.src) {
-                img.src = img.dataset.src;
-                img.onload = () => {
-                  img.classList.add('loaded');
-                  if (skeleton) skeleton.classList.add('hidden');
-                };
-                img.onerror = () => {
-                  if (skeleton) skeleton.classList.add('hidden');
-                };
-              } else if (!img) {
-                if (skeleton) skeleton.classList.add('hidden');
-              }
+              audio.src = audio.dataset.src;
+              audio.load();
+            } else if (img) {
+              img.src = img.dataset.src;
             }
             observer.unobserve(container);
           }
