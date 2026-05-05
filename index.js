@@ -406,27 +406,6 @@ async function handleRootRequest(request, config) {
           color: white;
           font-size: 24px;
       }
-      .thumbnail-item .remove-btn {
-          position: absolute;
-          top: 2px;
-          right: 2px;
-          width: 20px;
-          height: 20px;
-          border-radius: 50%;
-          background: rgba(0, 0, 0, 0.6);
-          color: white;
-          border: none;
-          cursor: pointer;
-          font-size: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          opacity: 0;
-          transition: opacity 0.2s ease;
-      }
-      .thumbnail-item:hover .remove-btn {
-          opacity: 1;
-      }
       .btn-primary {
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
           border: none !important;
@@ -519,8 +498,7 @@ async function handleRootRequest(request, config) {
                   <textarea class="form-control" id="fileLink" readonly></textarea>
               </div>
               <div class="form-group mb-3 uniform-height btn-group-spacing" style="display: none;">
-                  <button type="button" class="btn btn-light mr-2" id="urlBtn">URL</button>
-                  <button type="button" class="btn btn-light" id="markdownBtn">Markdown</button>
+                  <button type="button" class="btn btn-light" id="urlBtn">复制链接</button>
               </div>
               <div class="upload-progress" id="uploadProgress">
                   <div class="progress-text" id="progressText">上传中... 0%</div>
@@ -571,7 +549,8 @@ async function handleRootRequest(request, config) {
             showUpload: false,
             showPreview: false,
             browseLabel: "选择",
-            msgPlaceholder: "点击右侧按钮上传媒体文件"
+            msgPlaceholder: "点击右侧按钮上传媒体文件",
+            msgSelected: "选中 {n} 个文件"
           }).on('fileinitialized', function() {
             $(this).closest('.file-input').find('input[type="file"]').attr('accept', 'image/*,video/*,audio/*');
           }).on('filebatchselected', handleFileSelection)
@@ -656,14 +635,13 @@ async function handleRootRequest(request, config) {
 
             const thumbnailHtml = '<div class="thumbnail-item" data-index="' + index + '">' +
                 thumbnailContent +
-                '<button class="remove-btn" title="移除">&times;</button>' +
             '</div>';
 
             container.append(thumbnailHtml);
         }
 
         function updateFileLinkDisplay() {
-            $('#fileLink').val(originalImageURLs.join('\\n\\n'));
+            $('#fileLink').val(originalImageURLs.join('\\n'));
             $('.form-group').show();
             adjustTextareaHeight($('#fileLink')[0]);
         }
@@ -694,29 +672,9 @@ async function handleRootRequest(request, config) {
 
             const thumbnailHtml = '<div class="thumbnail-item" data-index="' + index + '">' +
                 thumbnailContent +
-                '<button class="remove-btn" title="移除">&times;</button>' +
             '</div>';
 
             container.append(thumbnailHtml);
-        }
-
-        function removeThumbnail(index) {
-            const item = thumbnailData[index];
-            if (item && item.previewUrl) {
-                URL.revokeObjectURL(item.previewUrl);
-            }
-            thumbnailData[index] = null;
-
-            const urlToRemove = item ? item.url : null;
-            if (urlToRemove) {
-                originalImageURLs = originalImageURLs.filter(u => u !== urlToRemove);
-                updateFileLinkDisplay();
-                if (originalImageURLs.length === 0) {
-                    hideButtonsAndTextarea();
-                }
-            }
-
-            $('.thumbnail-item[data-index="' + index + '"]').remove();
         }
 
         function clearAllThumbnails() {
@@ -728,12 +686,6 @@ async function handleRootRequest(request, config) {
             thumbnailData = [];
             $('#thumbnailContainer').empty();
         }
-
-        $(document).on('click', '.thumbnail-item .remove-btn', function(e) {
-            e.stopPropagation();
-            const index = $(this).parent().data('index');
-            removeThumbnail(index);
-        });
 
         async function calculateFileHash(file) {
           const chunkSize = 1024 * 1024;
@@ -795,7 +747,7 @@ async function handleRootRequest(request, config) {
             } else {
               originalImageURLs.push(responseData.data);
               addThumbnail(file, responseData.data);
-              $('#fileLink').val(originalImageURLs.join('\\n\\n'));
+              $('#fileLink').val(originalImageURLs.join('\\n'));
               $('.form-group').show();
               adjustTextareaHeight($('#fileLink')[0]);
               toastr.success('上传成功！请自行复制链接');
@@ -813,8 +765,6 @@ async function handleRootRequest(request, config) {
               errorMsg = error.message;
             }
             toastr.error(errorMsg);
-          } finally {
-            toastr.clear();
           }
         }
     
@@ -881,15 +831,10 @@ async function handleRootRequest(request, config) {
           }
         });
     
-        $('#urlBtn, #markdownBtn').on('click', function() {
+        $('#urlBtn').on('click', function() {
           const fileLinks = originalImageURLs.map(url => url.trim()).filter(url => url !== '');
           if (fileLinks.length > 0) {
-            const formatMap = {
-              'urlBtn': 'url',
-              'markdownBtn': 'markdown'
-            };
-            const format = formatMap[$(this).attr('id')];
-            const formattedLinks = formatLinks(fileLinks, format);
+            const formattedLinks = fileLinks.join('\\n');
             $('#fileLink').val(formattedLinks);
             adjustTextareaHeight($('#fileLink')[0]);
             copyToClipboardWithToastr(formattedLinks);
@@ -942,7 +887,7 @@ async function handleRootRequest(request, config) {
         }
 
         function hideButtonsAndTextarea() {
-          $('#urlBtn, #markdownBtn, #fileLink').parent('.form-group').hide();
+          $('#urlBtn, #fileLink').parent('.form-group').hide();
         }
 
         function saveToLocalCache(url, fileName, fileHash) {
