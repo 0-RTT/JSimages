@@ -1,37 +1,41 @@
-const CONTENT_TYPE_MAP = {
-  'jpg': 'image/jpeg',
-  'jpeg': 'image/jpeg',
-  'png': 'image/png',
-  'gif': 'image/gif',
-  'webp': 'image/webp',
-  'bmp': 'image/bmp',
-  'svg': 'image/svg+xml',
-  'tiff': 'image/tiff',
-  'mp4': 'video/mp4',
-  'avi': 'video/x-msvideo',
-  'mov': 'video/quicktime',
-  'webm': 'video/webm',
-  'wmv': 'video/x-ms-wmv',
-  'flv': 'video/x-flv',
-  'mkv': 'video/x-matroska',
-  'mp3': 'audio/mpeg',
-  'wav': 'audio/wav',
-  'ogg': 'audio/ogg',
-  'flac': 'audio/flac',
-  'aac': 'audio/aac',
-  'm4a': 'audio/mp4',
-  'wma': 'audio/x-ms-wma',
-  'opus': 'audio/opus'
+var __defProp = Object.defineProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+
+// index.js
+var CONTENT_TYPE_MAP = {
+  "jpg": "image/jpeg",
+  "jpeg": "image/jpeg",
+  "png": "image/png",
+  "gif": "image/gif",
+  "webp": "image/webp",
+  "bmp": "image/bmp",
+  "svg": "image/svg+xml",
+  "tiff": "image/tiff",
+  "mp4": "video/mp4",
+  "avi": "video/x-msvideo",
+  "mov": "video/quicktime",
+  "webm": "video/webm",
+  "wmv": "video/x-ms-wmv",
+  "flv": "video/x-flv",
+  "mkv": "video/x-matroska",
+  "mp3": "audio/mpeg",
+  "wav": "audio/wav",
+  "ogg": "audio/ogg",
+  "flac": "audio/flac",
+  "aac": "audio/aac",
+  "m4a": "audio/mp4",
+  "wma": "audio/x-ms-wma",
+  "opus": "audio/opus"
 };
-
-const ALLOWED_EXTENSIONS = new Set(Object.keys(CONTENT_TYPE_MAP));
-
-const CACHE_CONFIG = {
+var ALLOWED_EXTENSIONS = new Set(Object.keys(CONTENT_TYPE_MAP));
+var SUPPORTED_IMAGE_EXTS = ["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg", "tiff"];
+var SUPPORTED_VIDEO_EXTS = ["mp4", "avi", "mov", "wmv", "flv", "mkv", "webm"];
+var SUPPORTED_AUDIO_EXTS = ["mp3", "wav", "ogg", "flac", "aac", "m4a", "wma", "opus"];
+var CACHE_CONFIG = {
   HTML: 3600,
   IMAGE: 86400,
   API: 300
 };
-
 function extractConfig(env) {
   return {
     domain: env.DOMAIN,
@@ -39,90 +43,99 @@ function extractConfig(env) {
     username: env.USERNAME,
     password: env.PASSWORD,
     adminPath: env.ADMIN_PATH,
-    enableAuth: env.ENABLE_AUTH === 'true',
+    enableAuth: env.ENABLE_AUTH === "true",
     r2Bucket: env.SB,
     maxSize: (env.MAX_SIZE_MB ? parseInt(env.MAX_SIZE_MB, 10) : 10) * 1024 * 1024
   };
 }
-
+__name(extractConfig, "extractConfig");
 function createCachedResponse(body, contentType, cacheMaxAge) {
   return new Response(body, {
     headers: {
-      'Content-Type': contentType,
-      'Cache-Control': `public, max-age=${cacheMaxAge}`,
-      'CDN-Cache-Control': `public, max-age=${cacheMaxAge}`
+      "Content-Type": contentType,
+      "Cache-Control": `public, max-age=${cacheMaxAge}`,
+      "CDN-Cache-Control": `public, max-age=${cacheMaxAge}`
     }
   });
 }
-
+__name(createCachedResponse, "createCachedResponse");
 function jsonResponse(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json' }
+    headers: { "Content-Type": "application/json" }
   });
 }
-
+__name(jsonResponse, "jsonResponse");
 function unauthorizedResponse() {
-  return new Response('Unauthorized', {
+  return new Response("Unauthorized", {
     status: 401,
-    headers: { 'WWW-Authenticate': 'Basic realm="Admin"' }
+    headers: { "WWW-Authenticate": 'Basic realm="Admin"' }
   });
 }
-
+__name(unauthorizedResponse, "unauthorizedResponse");
 function getFileExtension(url) {
-  return url.split('.').pop().toLowerCase();
+  return url.split(".").pop().toLowerCase();
 }
-
+__name(getFileExtension, "getFileExtension");
 function getContentType(extension) {
-  return CONTENT_TYPE_MAP[extension] || 'application/octet-stream';
+  return CONTENT_TYPE_MAP[extension] || "application/octet-stream";
 }
-
+__name(getContentType, "getContentType");
 function escapeHtml(text) {
   const map = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;'
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
   };
-  return String(text).replace(/[&<>"']/g, m => map[m]);
+  return String(text).replace(/[&<>"']/g, (m) => map[m]);
 }
-
-export default {
+__name(escapeHtml, "escapeHtml");
+function formatFileSize(bytes) {
+  if (!bytes || bytes === 0) return "—";
+  const units = ["B", "KB", "MB", "GB"];
+  let i = 0;
+  let size = bytes;
+  while (size >= 1024 && i < units.length - 1) {
+    size /= 1024;
+    i++;
+  }
+  return (i === 0 ? size : size.toFixed(1)) + " " + units[i];
+}
+__name(formatFileSize, "formatFileSize");
+var index_default = {
   async fetch(request, env) {
     const { pathname } = new URL(request.url);
     const config = extractConfig(env);
     switch (pathname) {
-      case '/':
+      case "/":
         return await handleRootRequest(request, config);
-      case '/api/stats':
+      case "/api/stats":
         return await handleStatsRequest(config);
       case `/${config.adminPath}`:
         return await handleAdminRequest(request, config);
-      case '/upload':
-        return request.method === 'POST'
-          ? await handleUploadRequest(request, config)
-          : new Response('Method Not Allowed', { status: 405 });
-      case '/delete-images':
+      case "/upload":
+        return request.method === "POST" ? await handleUploadRequest(request, config) : new Response("Method Not Allowed", { status: 405 });
+      case "/delete-images":
         return await handleDeleteImagesRequest(request, config);
       default:
         return await handleImageRequest(request, config);
     }
   }
 };
-
 function authenticate(request, username, password) {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Basic ')) return false;
+  const authHeader = request.headers.get("Authorization");
+  if (!authHeader || !authHeader.startsWith("Basic ")) return false;
   try {
-    const base64Credentials = authHeader.split(' ')[1];
-    const credentials = atob(base64Credentials).split(':');
+    const base64Credentials = authHeader.split(" ")[1];
+    const credentials = atob(base64Credentials).split(":");
     return credentials[0] === username && credentials[1] === password;
   } catch {
     return false;
   }
 }
-
+__name(authenticate, "authenticate");
 async function handleRootRequest(request, config) {
   const cache = caches.default;
   const cacheKey = new Request(request.url);
@@ -139,9 +152,9 @@ async function handleRootRequest(request, config) {
   <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Media-FishByte | 基于CloudFlare的图床服务">
-  <meta name="keywords" content="Media-FishByte,Workers,R2储存, Cloudflare,图床">
-  <title>Media-FishByte | 基于CloudFlare的图床服务</title>
+  <meta name="description" content="Media-FishByte | \u57FA\u4E8ECloudFlare\u7684\u56FE\u5E8A\u670D\u52A1">
+  <meta name="keywords" content="Media-FishByte,Workers,R2\u50A8\u5B58, Cloudflare,\u56FE\u5E8A">
+  <title>Media-FishByte | \u57FA\u4E8ECloudFlare\u7684\u56FE\u5E8A\u670D\u52A1</title>
   <link rel="icon" href="https://p1.meituan.net/csc/c195ee91001e783f39f41ffffbbcbd484286.ico" type="image/x-icon">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.1/css/bootstrap.min.css" integrity="sha512-T584yQ/tdRR5QwOpfvDfVQUidzfgc2339Lc8uBDtcp/wYu80d7jwBgAxbyMh0a9YM9F8N3tdErpFI8iaGx6x5g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-fileinput/5.2.7/css/fileinput.min.css" integrity="sha512-qPjB0hQKYTx1Za9Xip5h0PXcxaR1cRbHuZHo9z+gb5IgM6ZOTtIH4QLITCxcCp/8RMXtw2Z85MIZLv6LfGTLiw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -189,6 +202,30 @@ async function handleRootRequest(request, config) {
       --scrollbar-thumb: rgba(255,255,255,0.2);
       --overlay-bg: rgba(0, 0, 0, 0.55);
       --thumbnail-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      #fileLink.form-control {
+          background-color: #2a2a45;
+          color: #e0e0e0;
+          border-color: rgba(167, 139, 250, 0.15);
+      }
+      #fileLink::-webkit-scrollbar {
+          width: 6px;
+      }
+      #fileLink::-webkit-scrollbar-track {
+          background: transparent;
+      }
+      #fileLink::-webkit-scrollbar-thumb {
+          background: rgba(255,255,255,0.2);
+          border-radius: 3px;
+      }
+      #urlBtn.btn-light {
+          background-color: #2a2a45;
+          color: #a78bfa;
+          border-color: rgba(167, 139, 250, 0.15);
+      }
+      #urlBtn.btn-light:hover {
+          background-color: rgba(167, 139, 250, 0.15);
+          border-color: #a78bfa;
+      }
   }
       body {
           margin: 0;
@@ -259,7 +296,8 @@ async function handleRootRequest(request, config) {
       .btn-group-spacing {
           margin-bottom: 30px;
       }
-      #viewCacheBtn {
+      #viewCacheBtn,
+      #adminLink {
           background: none;
           border: none;
           color: var(--accent);
@@ -270,8 +308,15 @@ async function handleRootRequest(request, config) {
           padding: 0;
           line-height: 1;
           flex-shrink: 0;
+          text-decoration: none;
       }
-      #viewCacheBtn:hover {
+      #viewCacheBtn:focus,
+      #adminLink:focus,
+      #themeToggle:focus {
+          outline: none;
+      }
+      #viewCacheBtn:hover,
+      #adminLink:hover {
           opacity: 1;
           transform: scale(1.1);
       }
@@ -456,13 +501,13 @@ async function handleRootRequest(request, config) {
       .upload-progress {
           display: none;
           margin-top: 15px;
-          text-align: center;
       }
-      .progress-text {
-          font-size: 14px;
+      #uploadProgress .progress-bar {
+          background: var(--title-gradient);
+          font-size: 13px;
           font-weight: 500;
-          color: var(--accent);
           letter-spacing: 0.5px;
+          border-radius: 4px;
       }
       .thumbnail-container {
           display: flex;
@@ -556,6 +601,9 @@ async function handleRootRequest(request, config) {
       .btn-light:active {
           transform: translateY(0);
       }
+      #urlBtn.btn-light {
+          border: 1px solid var(--accent);
+      }
       @media (max-width: 768px) {
           .card {
               width: 95%;
@@ -618,12 +666,13 @@ async function handleRootRequest(request, config) {
   </style>
 </head>
 <body>
-      <div id="dragOverlay"><div class="drag-hint"><i class="fas fa-cloud-upload-alt"></i><p>拖拽文件到此处上传</p></div></div>
+      <div id="dragOverlay"><div class="drag-hint"><i class="fas fa-cloud-upload-alt"></i><p>\u62D6\u62FD\u6587\u4EF6\u5230\u6B64\u5904\u4E0A\u4F20</p></div></div>
       <div class="card">
       <div class="card-header-row">
         <div class="title">Media-FishByte</div>
-        <button type="button" class="btn" id="themeToggle" title="切换主题"><i class="fas fa-sun"></i></button>
-        <button type="button" class="btn" id="viewCacheBtn" title="查看最近上传记录"><i class="fas fa-clock"></i></button>
+        <a href="/admin" class="btn" id="adminLink" title="\u7BA1\u7406\u9875\u9762"><i class="fas fa-arrow-right"></i></a>
+        <button type="button" class="btn" id="themeToggle" title="\u5207\u6362\u4E3B\u9898"><i class="fas fa-sun"></i></button>
+        <button type="button" class="btn" id="viewCacheBtn" title="\u67E5\u770B\u6700\u8FD1\u4E0A\u4F20\u8BB0\u5F55"><i class="fas fa-clock"></i></button>
       </div>
       <div class="card-body">
           <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
@@ -631,38 +680,31 @@ async function handleRootRequest(request, config) {
                   <input id="fileInput" name="file" type="file" class="form-control-file" data-browse-on-zone-click="true" multiple accept="image/*,video/*,audio/*">
               </div>
               <div class="upload-hint">
-                  <i class="fas fa-info-circle"></i>支持批量上传、拖拽上传、粘贴上传
+                  <i class="fas fa-info-circle"></i>\u652F\u6301\u6279\u91CF\u4E0A\u4F20\u3001\u62D6\u62FD\u4E0A\u4F20\u3001\u7C98\u8D34\u4E0A\u4F20
               </div>
               <div id="fileLink-group" class="form-group mb-3 uniform-height" style="display: none;">
                   <textarea class="form-control" id="fileLink" readonly></textarea>
               </div>
               <div class="form-group mb-3 uniform-height btn-group-spacing" style="display: none;">
-                  <button type="button" class="btn btn-light" id="urlBtn">复制链接</button>
+                  <button type="button" class="btn btn-light" id="urlBtn">\u590D\u5236\u94FE\u63A5</button>
               </div>
               <div class="upload-progress" id="uploadProgress">
-                  <div class="progress-text" id="progressText">上传中... 0%</div>
+                  <div style="font-size:13px;color:var(--text-secondary);margin-bottom:6px;text-align:center">\u4E0A\u4F20\u4E2D...</div>
+                  <div class="progress" style="height:22px;border-radius:6px;background:var(--accent-light)">
+                      <div class="progress-bar progress-bar-striped progress-bar-animated" id="progressBar" role="progressbar" style="width:0%;border-radius:6px">0%</div>
+                  </div>
               </div>
               <div class="thumbnail-container" id="thumbnailContainer"></div>
               <div id="cacheContent" style="display: none;"></div>
           </form>
       </div>
-      <p class="project-link">项目参考来源 - <a href="https://github.com/0-RTT/JSimages" target="_blank" rel="noopener noreferrer">0-RTT/JSimages</a></p>
-      <p class="stats-line" id="statsLine"><i class="fas fa-database"></i> 加载统计中...</p>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-fileinput/5.2.7/js/fileinput.min.js" integrity="sha512-CCLv901EuJXf3k0OrE5qix8s2HaCDpjeBERR2wVHUwzEIc7jfiK9wqJFssyMOc1lJ/KvYKsDenzxbDTAQ4nh1w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-fileinput/5.2.7/js/locales/zh.min.js" integrity="sha512-IizKWmZY3aznnbFx/Gj8ybkRyKk7wm+d7MKmEgOMRQDN1D1wmnDRupfXn6X04pwIyKFWsmFVgrcl0j6W3Z5FDQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js" integrity="sha512-lbwH47l/tPXJYG9AcFNoJaTMhGvYWhVM9YI43CT+uteTRRaiLCui8snIgyAN8XWgNjNhCqlAUdzZptso6OCoFQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+      <p class="project-link">\u9879\u76EE\u53C2\u8003\u6765\u6E90 - <a href="https://github.com/0-RTT/JSimages" target="_blank" rel="noopener noreferrer">0-RTT/JSimages</a></p>
+      <p class="stats-line" id="statsLine"><i class="fas fa-database"></i> \u52A0\u8F7D\u7EDF\u8BA1\u4E2D...</p>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"><\/script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-fileinput/5.2.7/js/fileinput.min.js" integrity="sha512-CCLv901EuJXf3k0OrE5qix8s2HaCDpjeBERR2wVHUwzEIc7jfiK9wqJFssyMOc1lJ/KvYKsDenzxbDTAQ4nh1w==" crossorigin="anonymous" referrerpolicy="no-referrer"><\/script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-fileinput/5.2.7/js/locales/zh.min.js" integrity="sha512-IizKWmZY3aznnbFx/Gj8ybkRyKk7wm+d7MKmEgOMRQDN1D1wmnDRupfXn6X04pwIyKFWsmFVgrcl0j6W3Z5FDQ==" crossorigin="anonymous" referrerpolicy="no-referrer"><\/script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js" integrity="sha512-lbwH47l/tPXJYG9AcFNoJaTMhGvYWhVM9YI43CT+uteTRRaiLCui8snIgyAN8XWgNjNhCqlAUdzZptso6OCoFQ==" crossorigin="anonymous" referrerpolicy="no-referrer"><\/script>
       <script>
-      function formatLinks(urls, format) {
-        switch (format) {
-          case 'url':
-            return urls.join('\\n\\n');
-          case 'markdown':
-            return urls.map(url => '![image](' + url + ')').join('\\n\\n');
-          default:
-            return urls.join('\\n');
-        }
-      }
       const ALLOWED_EXTENSIONS = ['jpg','jpeg','png','gif','webp','bmp','svg','tiff','mp4','avi','mov','webm','wmv','flv','mkv','mp3','wav','ogg','flac','aac','m4a','wma','opus'];
       function isAllowedFile(file) {
         const ext = file.name.split('.').pop().toLowerCase();
@@ -678,6 +720,7 @@ async function handleRootRequest(request, config) {
         let thumbnailData = [];
         let isCacheVisible = false;
         let resettingUnsupported = false;
+        let activeXHRs = [];
         initFileInput();
         fetchStats();
 
@@ -689,9 +732,9 @@ async function handleRootRequest(request, config) {
             removeClass: "btn btn-danger",
             showUpload: false,
             showPreview: false,
-            browseLabel: "选择",
-            msgPlaceholder: "点击右侧按钮上传媒体文件",
-            msgSelected: "选中 {n} 个文件"
+            browseLabel: "\u9009\u62E9",
+            msgPlaceholder: "\u70B9\u51FB\u53F3\u4FA7\u6309\u94AE\u4E0A\u4F20\u5A92\u4F53\u6587\u4EF6",
+            msgSelected: "\u9009\u4E2D {n} \u4E2A\u6587\u4EF6"
           }).on('fileinitialized', function() {
             $(this).closest('.file-input').find('input[type="file"]').attr('accept', 'image/*,video/*,audio/*');
           }).on('filebatchselected', handleFileSelection)
@@ -708,11 +751,11 @@ async function handleRootRequest(request, config) {
                 ' &nbsp;<i class="fas fa-video"></i> ' + data.videos +
                 ' &nbsp;<i class="fas fa-music"></i> ' + data.audio +
                 ' &nbsp;<i class="fas fa-file"></i> ' + data.other +
-                ' &nbsp;| 共 ' + data.total + ' 个文件'
+                ' &nbsp;| \u5171 ' + data.total + ' \u4E2A\u6587\u4EF6'
               );
             }
           } catch(e) {
-            $('#statsLine').html('统计不可用');
+            $('#statsLine').html('\u7EDF\u8BA1\u4E0D\u53EF\u7528');
           }
         }
 
@@ -750,7 +793,7 @@ async function handleRootRequest(request, config) {
             }
           }
           if (rejectedFiles.length > 0) {
-            toastr.warning('不支持的文件类型: ' + rejectedFiles.join(', '));
+            toastr.warning('\u4E0D\u652F\u6301\u7684\u6587\u4EF6\u7C7B\u578B: ' + rejectedFiles.join(', '));
           }
           if (rejectedFiles.length > 0 && allowedFiles.length === 0) {
             setTimeout(() => {
@@ -781,7 +824,7 @@ async function handleRootRequest(request, config) {
                 originalImageURLs.push(cachedData.url);
                 updateFileLinkDisplay();
                 addThumbnailFromCache(cachedData.fileName, cachedData.url);
-                toastr.info('已从缓存中读取数据');
+                toastr.info('\u5DF2\u4ECE\u7F13\u5B58\u4E2D\u8BFB\u53D6\u6570\u636E');
             }
         }
 
@@ -873,44 +916,46 @@ async function handleRootRequest(request, config) {
           return hash + '-' + file.size + '-' + file.lastModified;
         }
 
-        function isFileInCache(fileHash) {
-          const cacheData = JSON.parse(localStorage.getItem('uploadCache')) || [];
-          return cacheData.some(item => item.hash === fileHash);
-        }
-    
         async function uploadFile(file, fileHash) {
           try {
             const formData = new FormData();
             formData.append('file', file, file.name);
             $('#uploadProgress').show();
-            $('#progressText').text('上传中... 0%');
+            $('#progressBar').css('width', '0%').text('0%');
             const xhr = new XMLHttpRequest();
             xhr.upload.addEventListener('progress', (e) => {
               if (e.lengthComputable) {
                 const percentComplete = Math.round((e.loaded / e.total) * 100);
-                $('#progressText').text('上传中... ' + percentComplete + '%');
+                $('#progressBar').css('width', percentComplete + '%').text(percentComplete + '%');
               }
             });
 
+            activeXHRs.push(xhr);
+
             const uploadPromise = new Promise((resolve, reject) => {
+              function cleanup() {
+                const idx = activeXHRs.indexOf(xhr);
+                if (idx !== -1) activeXHRs.splice(idx, 1);
+              }
               xhr.onload = () => {
+                cleanup();
                 if (xhr.status >= 200 && xhr.status < 300) {
                   try {
                     resolve(JSON.parse(xhr.responseText));
                   } catch (e) {
-                    reject(new Error('响应解析失败'));
+                    reject(new Error('\u54CD\u5E94\u89E3\u6790\u5931\u8D25'));
                   }
                 } else {
                   try {
                     const errorData = JSON.parse(xhr.responseText);
-                    reject(new Error(errorData.error || '上传失败'));
+                    reject(new Error(errorData.error || '\u4E0A\u4F20\u5931\u8D25'));
                   } catch (e) {
-                    reject(new Error('上传失败: HTTP ' + xhr.status));
+                    reject(new Error('\u4E0A\u4F20\u5931\u8D25: HTTP ' + xhr.status));
                   }
                 }
               };
-              xhr.onerror = () => reject(new Error('网络错误，请检查网络连接'));
-              xhr.ontimeout = () => reject(new Error('上传超时，请重试'));
+              xhr.onerror = () => { cleanup(); reject(new Error('\u7F51\u7EDC\u9519\u8BEF\uFF0C\u8BF7\u68C0\u67E5\u7F51\u7EDC\u8FDE\u63A5')); };
+              xhr.ontimeout = () => { cleanup(); reject(new Error('\u4E0A\u4F20\u8D85\u65F6\uFF0C\u8BF7\u91CD\u8BD5')); };
               xhr.open('POST', '/upload');
               xhr.timeout = 120000;
               xhr.send(formData);
@@ -926,17 +971,17 @@ async function handleRootRequest(request, config) {
               $('#fileLink').val(originalImageURLs.join('\\n'));
               $('.form-group').show();
               adjustTextareaHeight($('#fileLink')[0]);
-              toastr.success('上传成功！请自行复制链接');
+              toastr.success('\u4E0A\u4F20\u6210\u529F\uFF01\u8BF7\u81EA\u884C\u590D\u5236\u94FE\u63A5');
               saveToLocalCache(responseData.data, file.name, fileHash);
             }
           } catch (error) {
-            console.error('处理文件时出现错误:', error);
+            console.error('\u5904\u7406\u6587\u4EF6\u65F6\u51FA\u73B0\u9519\u8BEF:', error);
             $('#uploadProgress').hide();
-            let errorMsg = '文件处理失败';
-            if (error.message.includes('网络')) {
-              errorMsg = '网络错误，请检查网络连接';
-            } else if (error.message.includes('超时')) {
-              errorMsg = '上传超时，请重试';
+            let errorMsg = '\u6587\u4EF6\u5904\u7406\u5931\u8D25';
+            if (error.message.includes('\u7F51\u7EDC')) {
+              errorMsg = '\u7F51\u7EDC\u9519\u8BEF\uFF0C\u8BF7\u68C0\u67E5\u7F51\u7EDC\u8FDE\u63A5';
+            } else if (error.message.includes('\u8D85\u65F6')) {
+              errorMsg = '\u4E0A\u4F20\u8D85\u65F6\uFF0C\u8BF7\u91CD\u8BD5';
             } else if (error.message) {
               errorMsg = error.message;
             }
@@ -952,7 +997,7 @@ async function handleRootRequest(request, config) {
               if (item.kind === 'file') {
                 const pasteFile = item.getAsFile();
                 if (!isAllowedFile(pasteFile)) {
-                  toastr.warning('不支持的文件类型: ' + pasteFile.name);
+                  toastr.warning('\u4E0D\u652F\u6301\u7684\u6587\u4EF6\u7C7B\u578B: ' + pasteFile.name);
                   continue;
                 }
                 const dataTransfer = new DataTransfer();
@@ -1009,7 +1054,7 @@ async function handleRootRequest(request, config) {
               }
             }
             if (rejected.length > 0) {
-              toastr.warning('不支持的文件类型: ' + rejected.join(', '));
+              toastr.warning('\u4E0D\u652F\u6301\u7684\u6587\u4EF6\u7C7B\u578B: ' + rejected.join(', '));
             }
             if (dataTransfer.files.length > 0) {
               $('#fileInput')[0].files = dataTransfer.files;
@@ -1033,6 +1078,13 @@ async function handleRootRequest(request, config) {
             resettingUnsupported = false;
             return;
           }
+          if (isCacheVisible) {
+            $('#cacheContent').hide();
+            isCacheVisible = false;
+          }
+          activeXHRs.forEach(xhr => xhr.abort());
+          activeXHRs = [];
+          $('#uploadProgress').hide();
           $('#fileLink').val('');
           adjustTextareaHeight($('#fileLink')[0]);
           hideButtonsAndTextarea();
@@ -1054,9 +1106,9 @@ async function handleRootRequest(request, config) {
         function copyToClipboardWithToastr(text) {
           if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(text).then(() => {
-              toastr.success('已复制到剪贴板');
+              toastr.success('\u5DF2\u590D\u5236\u5230\u526A\u8D34\u677F');
             }).catch(() => {
-              toastr.error('复制失败');
+              toastr.error('\u590D\u5236\u5931\u8D25');
             });
           } else {
             const textarea = document.createElement('textarea');
@@ -1065,9 +1117,9 @@ async function handleRootRequest(request, config) {
             textarea.select();
             try {
               document.execCommand('copy');
-              toastr.success('已复制到剪贴板');
+              toastr.success('\u5DF2\u590D\u5236\u5230\u526A\u8D34\u677F');
             } catch (err) {
-              toastr.error('复制失败');
+              toastr.error('\u590D\u5236\u5931\u8D25');
             }
             document.body.removeChild(textarea);
           }
@@ -1099,12 +1151,10 @@ async function handleRootRequest(request, config) {
           cacheContent.empty();
           if (isCacheVisible) {
             cacheContent.hide();
-            $('#fileLink').val('');
-            $('#fileLink').parent('.form-group').hide();
             isCacheVisible = false;
           } else {
             if (cacheData.length > 0) {
-              let html = '<div class="cache-header"><span>最近上传记录 <small style="font-weight:400;color:#999;font-size:10px">显示10条</small></span><button class="cache-clear-all" type="button">清除全部</button></div>';
+              let html = '<div class="cache-header"><span>\u6700\u8FD1\u4E0A\u4F20\u8BB0\u5F55 <small style="font-weight:400;color:#999;font-size:10px">\u663E\u793A10\u6761</small></span><button class="cache-clear-all" type="button">\u6E05\u9664\u5168\u90E8</button></div>';
               html += cacheData.map((item) => {
                 const type = getCacheType(item.fileName);
                 const truncatedUrl = item.url.length > 50 ? item.url.substring(0, 50) + '...' : item.url;
@@ -1130,12 +1180,12 @@ async function handleRootRequest(request, config) {
                     '<div class="cache-name">' + item.fileName + '</div>' +
                     '<div class="cache-url" title="' + item.url + '">' + truncatedUrl + '</div>' +
                   '</div>' +
-                  '<button class="cache-copy" type="button" title="复制URL"><i class="fas fa-copy"></i></button>' +
+                  '<button class="cache-copy" type="button" title="\u590D\u5236URL"><i class="fas fa-copy"></i></button>' +
                 '</div>';
               }).join('');
               cacheContent.html(html).show();
             } else {
-              cacheContent.html('<div style="text-align:center;color:#999;padding:20px;">还没有记录哦！</div>').show();
+              cacheContent.html('<div style="text-align:center;color:#999;padding:20px;">\u8FD8\u6CA1\u6709\u8BB0\u5F55\u54E6\uFF01</div>').show();
             }
             isCacheVisible = true;
           }
@@ -1154,20 +1204,20 @@ async function handleRootRequest(request, config) {
 
         $(document).on('click', '.cache-clear-all', function(e) {
           e.preventDefault();
-          if (!confirm('确定要清除全部历史记录吗？')) return;
+          if (!confirm('\u786E\u5B9A\u8981\u6E05\u9664\u5168\u90E8\u5386\u53F2\u8BB0\u5F55\u5417\uFF1F')) return;
           localStorage.removeItem('uploadCache');
           $('#cacheContent').hide();
           isCacheVisible = false;
         });
       });
-    </script>
+    <\/script>
 </body>
 </html>  
-`, 'text/html;charset=UTF-8', CACHE_CONFIG.HTML);
+`, "text/html;charset=UTF-8", CACHE_CONFIG.HTML);
   await cache.put(cacheKey, response.clone());
   return response;
 }
-
+__name(handleRootRequest, "handleRootRequest");
 async function handleStatsRequest(config) {
   try {
     const result = await config.database.prepare(`
@@ -1189,87 +1239,156 @@ async function handleStatsRequest(config) {
     return jsonResponse({ total: 0, images: 0, videos: 0, audio: 0, other: 0 }, 500);
   }
 }
-
+__name(handleStatsRequest, "handleStatsRequest");
 async function handleAdminRequest(request, config) {
   if (!authenticate(request, config.username, config.password)) {
     return unauthorizedResponse();
   }
   const url = new URL(request.url);
-  const page = parseInt(url.searchParams.get('page') || '1', 10);
-
-  return await generateAdminPage(config.database, page);
+  const page = parseInt(url.searchParams.get("page") || "1", 10);
+  const type = url.searchParams.get("type") || "all";
+  return await generateAdminPage(config.database, page, type);
 }
-
-async function generateAdminPage(DATABASE, page = 1) {
-  const pageSize = 50;
+__name(handleAdminRequest, "handleAdminRequest");
+async function generateAdminPage(DATABASE, page = 1, type = "all") {
+  try {
+    await DATABASE.prepare("ALTER TABLE media ADD COLUMN size INTEGER DEFAULT 0").run();
+  } catch (e) {
+  }
+  const pageSize = 30;
   const offset = (page - 1) * pageSize;
-  const totalCount = await DATABASE.prepare('SELECT COUNT(*) as count FROM media').first();
+  const typeFilter = buildTypeFilter(type);
+  const [rAll, rImage, rVideo, rAudio, rOther] = await Promise.all([
+    DATABASE.prepare("SELECT COUNT(*) as count FROM media").first(),
+    DATABASE.prepare("SELECT COUNT(*) as count FROM media " + buildTypeFilter("image")).first(),
+    DATABASE.prepare("SELECT COUNT(*) as count FROM media " + buildTypeFilter("video")).first(),
+    DATABASE.prepare("SELECT COUNT(*) as count FROM media " + buildTypeFilter("audio")).first(),
+    DATABASE.prepare("SELECT COUNT(*) as count FROM media " + buildTypeFilter("other")).first(),
+  ]);
+  const countAll = rAll.count;
+  const countImage = rImage.count;
+  const countVideo = rVideo.count;
+  const countAudio = rAudio.count;
+  const countOther = rOther.count;
+  const totalCount = await DATABASE.prepare("SELECT COUNT(*) as count FROM media " + typeFilter).first();
   const totalPages = Math.ceil(totalCount.count / pageSize);
-  const mediaData = await fetchMediaData(DATABASE, pageSize, offset);
-  const mediaHtml = mediaData.map(({ url }) => {
-    const fileExtension = url.split('.').pop().toLowerCase();
-    const timestamp = url.split('/').pop().split('.')[0];
+  const mediaData = await fetchMediaData(DATABASE, pageSize, offset, typeFilter);
+  const mediaHtml = mediaData.map(({ url, size }) => {
+    const fileExtension = url.split(".").pop().toLowerCase();
+    const timestamp = url.split("/").pop().split(".")[0].split("_").pop();
     const escapedUrl = escapeHtml(url);
     const typeLabel = escapeHtml(fileExtension);
-
-    const supportedImageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'];
-    const supportedVideoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm'];
-    const supportedAudioExtensions = ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma', 'opus'];
-
+    const fileSize = size > 0 ? formatFileSize(size) : "—";
     let gradient, iconClass, mediaTag;
-    if (supportedImageExtensions.includes(fileExtension)) {
-      gradient = 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)';
-      iconClass = 'fas fa-image';
+    if (SUPPORTED_IMAGE_EXTS.includes(fileExtension)) {
+      gradient = "linear-gradient(135deg,#667eea 0%,#764ba2 100%)";
+      iconClass = "fas fa-image";
       mediaTag = `<img class="media-img" data-src="${escapedUrl}" alt="" onload="this.parentNode.querySelector('i').style.display='none'" onerror="this.style.display='none'">`;
-    } else if (supportedVideoExtensions.includes(fileExtension)) {
-      gradient = 'linear-gradient(135deg,#f093fb 0%,#f5576c 100%)';
-      iconClass = 'fas fa-play-circle';
+    } else if (SUPPORTED_VIDEO_EXTS.includes(fileExtension)) {
+      gradient = "linear-gradient(135deg,#f093fb 0%,#f5576c 100%)";
+      iconClass = "fas fa-play-circle";
       mediaTag = `<video class="media-img" data-src="${escapedUrl}" muted playsinline preload="none" onloadeddata="this.parentNode.querySelector('i').style.display='none'" onerror="this.style.display='none'"></video>`;
-    } else if (supportedAudioExtensions.includes(fileExtension)) {
-      gradient = 'linear-gradient(135deg,#4facfe 0%,#00f2fe 100%)';
-      iconClass = 'fas fa-music';
+    } else if (SUPPORTED_AUDIO_EXTS.includes(fileExtension)) {
+      gradient = "linear-gradient(135deg,#4facfe 0%,#00f2fe 100%)";
+      iconClass = "fas fa-music";
       mediaTag = `<audio class="media-audio" data-src="${escapedUrl}" preload="none" controls onloadeddata="this.parentNode.querySelector('i').style.display='none'" onerror="this.style.display='none'"></audio>`;
     } else {
-      gradient = 'linear-gradient(135deg,#a8a8a8 0%,#c9c9c9 100%)';
-      iconClass = 'fas fa-file';
-      mediaTag = '';
+      gradient = "linear-gradient(135deg,#a8a8a8 0%,#c9c9c9 100%)";
+      iconClass = "fas fa-file";
+      mediaTag = "";
     }
-
     return `
     <div class="media-container" data-key="${escapedUrl}" onclick="toggleImageSelection(this)">
+      <div class="media-checkmark"><i class="fas fa-check"></i></div>
       <div class="media-thumb" style="background:${gradient}">
         <i class="${iconClass}" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.4);font-size:36px"></i>
         ${mediaTag}
       </div>
       <div class="media-type">${typeLabel}</div>
-      <div class="upload-time">上传时间: ${escapeHtml(new Date(parseInt(timestamp)).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }))}</div>
+      <div class="media-size">${fileSize}</div>
+      <div class="upload-time">\u4E0A\u4F20\u65F6\u95F4: ${escapeHtml(new Date(parseInt(timestamp)).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" }))}</div>
     </div>
     `;
-  }).join('');
-  
+  }).join("");
   const html = `
   <!DOCTYPE html>
   <html>
   <head>
-    <title>Media-FishByte 图床管理 | 基于CloudFlare的图床服务</title>
+    <title>Media-FishByte \u56FE\u5E8A\u7BA1\u7406 | \u57FA\u4E8ECloudFlare\u7684\u56FE\u5E8A\u670D\u52A1</title>
     <link rel="icon" href="https://p1.meituan.net/csc/c195ee91001e783f39f41ffffbbcbd484286.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.css" integrity="sha512-6S2HWzVFxruDlZxI3sXOZZ4/eJ8AcxkQH1+JjSe/ONCEqR9L4Ysq5JdT5ipqtzU7WHalNwzwBv+iE51gNHJNqQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+      :root {
+        --bg-gradient: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #4facfe);
+        --card-bg: rgba(255, 255, 255, 0.9);
+        --card-bg-solid: rgba(255, 255, 255, 0.95);
+        --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        --title-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --text-primary: #333;
+        --text-secondary: #555;
+        --text-muted: #999;
+        --accent: #667eea;
+        --accent-hover: #764ba2;
+        --accent-light: rgba(102, 126, 234, 0.1);
+        --danger: #e74c3c;
+        --danger-light: rgba(231, 76, 60, 0.1);
+        --border-light: rgba(255, 255, 255, 0.6);
+        --sticky-bg: rgba(255, 255, 255, 0.85);
+        --hover-shadow: rgba(102, 126, 234, 0.2);
+      }
+      [data-theme="dark"] {
+        --bg-gradient: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #1a1a3e);
+        --card-bg: rgba(30, 30, 50, 0.9);
+        --card-bg-solid: rgba(30, 30, 50, 0.95);
+        --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        --title-gradient: linear-gradient(135deg, #a78bfa 0%, #c084fc 100%);
+        --text-primary: #e0e0e0;
+        --text-secondary: #b0b0b0;
+        --text-muted: #888;
+        --accent: #a78bfa;
+        --accent-hover: #c084fc;
+        --accent-light: rgba(167, 139, 250, 0.15);
+        --danger: #ef4444;
+        --danger-light: rgba(239, 68, 68, 0.15);
+        --border-light: rgba(255, 255, 255, 0.08);
+        --sticky-bg: rgba(30, 30, 50, 0.85);
+        --hover-shadow: rgba(167, 139, 250, 0.2);
+      }
       * {
         box-sizing: border-box;
       }
       body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+        background: var(--bg-gradient);
+        background-size: 400% 400%;
+        animation: gradientShift 60s ease infinite;
         min-height: 100vh;
         margin: 0;
         padding: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+      }
+      .admin-card {
+        width: 100%;
+        max-width: 1400px;
+        background: var(--card-bg);
+        border-radius: 16px;
+        box-shadow: var(--card-shadow);
+        padding: 30px;
+        border: 1px solid var(--border-light);
+      }
+      @keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
       }
       .page-title {
         font-size: 32px;
         font-weight: 700;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: var(--title-gradient);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -1280,34 +1399,95 @@ async function generateAdminPage(DATABASE, page = 1) {
       .header {
         position: sticky;
         top: 10px;
-        background: rgba(255, 255, 255, 0.85);
+        background: var(--sticky-bg);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         z-index: 1000;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
-        padding: 15px 20px;
-        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.15);
-        border-radius: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.6);
+        margin-bottom: 16px;
+        padding: 8px 16px;
+        box-shadow: 0 2px 10px rgba(102, 126, 234, 0.08);
+        border-radius: 10px;
+        border: 1px solid var(--border-light);
         flex-wrap: wrap;
+        min-height: 44px;
+      }
+      .filter-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+      .filter-tab {
+        padding: 5px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        text-decoration: none;
+        color: var(--text-secondary);
+        background: var(--card-bg);
+        border: 1px solid var(--border-light);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        line-height: 1.6;
+      }
+      .filter-tab:hover {
+        color: var(--accent);
+        border-color: var(--accent);
+        transform: translateY(-1px);
+      }
+      .filter-tab.active {
+        color: white;
+        background: var(--title-gradient);
+        border-color: transparent;
+      }
+      #backToHome,
+      #themeToggleAdmin {
+        background: none;
+        border: none;
+        color: var(--accent);
+        opacity: 0.5;
+        cursor: pointer;
+        font-size: 22px;
+        transition: all 0.3s ease;
+        padding: 0;
+        line-height: 1;
+        flex-shrink: 0;
+        text-decoration: none;
+      }
+      #backToHome:focus,
+      #themeToggleAdmin:focus {
+          outline: none;
+      }
+      #backToHome:hover,
+      #themeToggleAdmin:hover {
+        opacity: 1;
+        transform: scale(1.1);
       }
       .header-left {
         flex: 1;
         display: flex;
         gap: 15px;
         align-items: center;
-        color: #555;
+        color: var(--text-secondary);
         font-weight: 500;
       }
-      .header-right {
+      .header-actions {
         display: flex;
-        gap: 10px;
-        justify-content: flex-end;
-        flex: 1;
-        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .header-divider {
+        color: var(--text-muted);
+        opacity: 0.4;
+        font-size: 14px;
+      }
+      #action-buttons {
+        display: none;
+        align-items: center;
+        gap: 8px;
       }
       .gallery {
         display: grid;
@@ -1318,24 +1498,24 @@ async function generateAdminPage(DATABASE, page = 1) {
         position: relative;
         overflow: hidden;
         border-radius: 16px;
-        background: rgba(255, 255, 255, 0.9);
+        background: var(--card-bg);
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.6);
-        aspect-ratio: 1 / 1;
+        box-shadow: var(--card-shadow);
+        border: 1px solid var(--border-light);
         transition: all 0.3s ease;
         cursor: pointer;
       }
+      .media-container::before {
+        content: '';
+        display: block;
+        padding-bottom: 100%;
+      }
       .media-container:hover {
         transform: translateY(-4px);
-        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
-        border-color: rgba(102, 126, 234, 0.3);
-      }
-      .media-container.selected {
-        border: 2px solid #667eea;
-        background: rgba(102, 126, 234, 0.1);
-        box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 8px 25px var(--hover-shadow);
+        border-color: var(--accent);
+        opacity: 0.85;
       }
       .media-thumb {
         position: absolute;
@@ -1351,7 +1531,7 @@ async function generateAdminPage(DATABASE, page = 1) {
         left: 0;
         width: 100%;
         height: 100%;
-        object-fit: contain;
+        object-fit: cover;
         z-index: 1;
       }
       .media-audio {
@@ -1366,7 +1546,7 @@ async function generateAdminPage(DATABASE, page = 1) {
         position: absolute;
         top: 10px;
         left: 10px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: var(--title-gradient);
         color: white;
         padding: 4px 10px;
         border-radius: 20px;
@@ -1378,30 +1558,67 @@ async function generateAdminPage(DATABASE, page = 1) {
       }
       .upload-time {
         position: absolute;
-        bottom: 10px;
+        bottom: 34px;
         left: 10px;
         right: 10px;
-        background: rgba(255, 255, 255, 0.9);
+        background: var(--card-bg-solid);
         backdrop-filter: blur(4px);
         padding: 8px 10px;
         border-radius: 8px;
-        color: #555;
+        color: var(--text-secondary);
         font-size: 12px;
         z-index: 10;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+      .media-container:hover .upload-time,
+      .media-container.selected .upload-time {
+        opacity: 1;
+      }
+
+      .media-checkmark {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: white;
         display: none;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        z-index: 20;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+        pointer-events: none;
       }
-      .footer {
-        margin-top: 30px;
-        text-align: center;
-        font-size: 16px;
-        color: #999;
-        padding: 20px;
-        background: rgba(255, 255, 255, 0.6);
-        border-radius: 12px;
-        backdrop-filter: blur(8px);
+      .media-container.selected .media-checkmark {
+        display: flex;
       }
-      .delete-button, .copy-button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      .media-container.selected {
+        border: 2px solid var(--accent);
+        background: var(--accent-light);
+        box-shadow: 0 0 20px var(--hover-shadow);
+      }
+      .media-size {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        background: rgba(0,0,0,0.55);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        color: white;
+        padding: 2px 8px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 500;
+        z-index: 10;
+        pointer-events: none;
+      }
+
+      .delete-button {
+        background: var(--title-gradient);
         color: white;
         border: none;
         border-radius: 10px;
@@ -1410,110 +1627,99 @@ async function generateAdminPage(DATABASE, page = 1) {
         transition: all 0.3s ease;
         width: auto;
         font-weight: 500;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 4px 15px var(--hover-shadow);
       }
-      .delete-button:hover, .copy-button:hover {
+      .delete-button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 6px 20px var(--hover-shadow);
       }
-      .delete-button:active, .copy-button:active {
+      .delete-button:active {
         transform: translateY(0);
       }
-      .hidden {
-        display: none;
-      }
-      .dropdown {
-        position: relative;
-        display: inline-block;
-      }
-      .dropdown-content {
-        display: none;
-        position: absolute;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(12px);
-        min-width: 140px;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-        z-index: 1001;
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.6);
-        overflow: hidden;
-        right: 0;
-      }
-      .dropdown-content button {
-        color: #333;
-        padding: 12px 16px;
-        text-decoration: none;
-        display: block;
-        background: none;
-        border: none;
-        width: 100%;
-        text-align: left;
-        font-size: 14px;
-        transition: all 0.2s ease;
-        cursor: pointer;
-      }
-      .dropdown-content button:hover {
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-        color: #667eea;
-      }
-      .dropdown:hover .dropdown-content {
-        display: block;
+      .delete-button.danger {
+        background: linear-gradient(135deg, var(--danger) 0%, #c0392b 100%);
       }
       .pagination {
         display: flex;
         justify-content: center;
         align-items: center;
         gap: 12px;
-        margin: 25px 0;
+        margin: 8px 0 0 0;
         flex-wrap: wrap;
-        padding: 15px;
-        background: rgba(255, 255, 255, 0.6);
-        border-radius: 16px;
-        backdrop-filter: blur(8px);
+        padding: 16px 0 0 0;
+        border-top: 1px solid var(--border-light);
       }
       .pagination button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        padding: 10px 24px;
+        background: var(--accent-light);
+        color: var(--accent);
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 8px 20px;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
         font-weight: 500;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
       }
       .pagination button:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        background: var(--accent);
+        color: white;
+        border-color: var(--accent);
       }
       .pagination button:disabled {
-        background: linear-gradient(135deg, #ccc 0%, #aaa 100%);
+        opacity: 0.4;
         cursor: not-allowed;
-        box-shadow: none;
       }
       .pagination .page-info {
-        color: #555;
+        color: var(--text-secondary);
         font-weight: 500;
         padding: 0 15px;
       }
       .empty-state {
         text-align: center;
-        padding: 80px 20px;
-        color: #999;
+        padding: 20px;
+        color: var(--text-muted);
         font-size: 18px;
-        background: rgba(255, 255, 255, 0.6);
+        background: var(--card-bg);
         border-radius: 16px;
         backdrop-filter: blur(8px);
+        border: 1px solid var(--border-light);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        aspect-ratio: 1 / 1;
       }
       .empty-state i {
-        font-size: 72px;
-        margin-bottom: 20px;
-        display: block;
+        font-size: 64px;
         opacity: 0.4;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg-gradient: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #1a1a3e);
+          --card-bg: rgba(30, 30, 50, 0.9);
+          --card-bg-solid: rgba(30, 30, 50, 0.95);
+          --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+          --title-gradient: linear-gradient(135deg, #a78bfa 0%, #c084fc 100%);
+          --text-primary: #e0e0e0;
+          --text-secondary: #b0b0b0;
+          --text-muted: #888;
+          --accent: #a78bfa;
+          --accent-hover: #c084fc;
+          --accent-light: rgba(167, 139, 250, 0.15);
+          --danger: #ef4444;
+          --danger-light: rgba(239, 68, 68, 0.15);
+          --border-light: rgba(255, 255, 255, 0.08);
+          --sticky-bg: rgba(30, 30, 50, 0.85);
+          --hover-shadow: rgba(167, 139, 250, 0.2);
+        }
       }
       @media (max-width: 768px) {
         body {
-          padding: 15px;
+          padding: 12px;
+        }
+        .admin-card {
+          padding: 16px;
+          border-radius: 12px;
         }
         .page-title {
           font-size: 24px;
@@ -1521,18 +1727,16 @@ async function generateAdminPage(DATABASE, page = 1) {
         }
         .header {
           top: 5px;
-          padding: 12px 15px;
-          border-radius: 12px;
-        }
-        .header-left, .header-right {
-          flex: 1 1 100%;
-          justify-content: flex-start;
+          padding: 8px 12px;
+          border-radius: 8px;
         }
         .header-left {
           font-size: 14px;
+          margin-bottom: 8px;
         }
-        .header-right {
-          margin-top: 10px;
+        .header-actions {
+          width: 100%;
+          justify-content: flex-end;
         }
         .gallery {
           grid-template-columns: repeat(2, 1fr);
@@ -1541,15 +1745,15 @@ async function generateAdminPage(DATABASE, page = 1) {
         .media-container {
           border-radius: 12px;
         }
-        .delete-button, .copy-button {
+        .delete-button {
           padding: 8px 16px;
           font-size: 14px;
           min-height: 44px;
           border-radius: 8px;
         }
         .pagination {
-          padding: 12px;
-          border-radius: 12px;
+          padding: 12px 0 0 0;
+          gap: 8px;
         }
         .pagination button {
           padding: 8px 16px;
@@ -1568,34 +1772,34 @@ async function generateAdminPage(DATABASE, page = 1) {
     function toggleImageSelection(container) {
       const key = container.getAttribute('data-key');
       container.classList.toggle('selected');
-      const uploadTime = container.querySelector('.upload-time');
       if (container.classList.contains('selected')) {
         selectedKeys.add(key);
         selectedCount++;
-        uploadTime.style.display = 'block';
       } else {
         selectedKeys.delete(key);
         selectedCount--;
-        uploadTime.style.display = 'none';
+        if (isAllSelected) {
+          isAllSelected = false;
+          updateSelectAllButton();
+        }
       }
       updateDeleteButton();
     }
   
     function updateDeleteButton() {
-      const deleteButton = document.getElementById('delete-button');
       const countDisplay = document.getElementById('selected-count');
       countDisplay.textContent = selectedCount;
-      const headerRight = document.querySelector('.header-right');
+      const actions = document.getElementById('action-buttons');
       if (selectedCount > 0) {
-        headerRight.classList.remove('hidden');
+        actions.style.display = 'flex';
       } else {
-        headerRight.classList.add('hidden');
+        actions.style.display = 'none';
       }
     }
   
     async function deleteSelectedImages() {
       if (selectedKeys.size === 0) return;
-      const confirmation = confirm('你确定要删除选中的媒体文件吗？此操作无法撤回。');
+      const confirmation = confirm('\u4F60\u786E\u5B9A\u8981\u5220\u9664\u9009\u4E2D\u7684\u5A92\u4F53\u6587\u4EF6\u5417\uFF1F\u6B64\u64CD\u4F5C\u65E0\u6CD5\u64A4\u56DE\u3002');
       if (!confirmation) return;
 
       const keysToDelete = Array.from(selectedKeys);
@@ -1608,7 +1812,7 @@ async function generateAdminPage(DATABASE, page = 1) {
       });
 
       if (response.ok) {
-        // 局部更新 DOM，添加淡出动画
+        // \u5C40\u90E8\u66F4\u65B0 DOM\uFF0C\u6DFB\u52A0\u6DE1\u51FA\u52A8\u753B
         const containers = document.querySelectorAll('.media-container');
         const containersToRemove = [];
 
@@ -1622,95 +1826,119 @@ async function generateAdminPage(DATABASE, page = 1) {
           }
         });
 
-        // 等待动画完成后移除元素
+        // \u7B49\u5F85\u52A8\u753B\u5B8C\u6210\u540E\u79FB\u9664\u5143\u7D20
         setTimeout(() => {
           containersToRemove.forEach(container => container.remove());
 
-          // 更新媒体文件总数
-          const totalCountElement = document.querySelector('.header-left span:first-child');
-          const currentTotal = parseInt(totalCountElement.textContent.match(/\d+/)[0]);
-          const newTotal = currentTotal - keysToDelete.length;
-          totalCountElement.textContent = '媒体文件 ' + newTotal + ' 个';
+          // \u66F4\u65B0\u5A92\u4F53\u6587\u4EF6\u603B\u6570
+          const headerLeft = document.querySelector('.header-left');
+          const newTotal = parseInt(headerLeft.dataset.total) - keysToDelete.length;
+          headerLeft.dataset.total = newTotal;
+          headerLeft.querySelector('span:first-child').textContent = '\u5171 ' + newTotal + ' \u4E2A\u6587\u4EF6';
 
-          // 更新分页信息
+          // \u66F4\u65B0\u5206\u9875\u4FE1\u606F
           const pageInfo = document.querySelector('.page-info');
           if (pageInfo) {
-            const match = pageInfo.textContent.match(/共 (\d+) 个/);
-            if (match) {
-              pageInfo.textContent = pageInfo.textContent.replace(/共 \d+ 个/, '共 ' + newTotal + ' 个');
-            }
+            pageInfo.dataset.total = newTotal;
+            const parts = pageInfo.textContent.split('\uFF08\u5171');
+            pageInfo.textContent = parts[0] + '\uFF08\u5171 ' + newTotal + ' \u4E2A\uFF09';
           }
 
-          // 重置选择状态
+          // \u66F4\u65B0\u7B5B\u9009\u6807\u7B7E\u6570\u91CF
+          const IMAGE_EXTS = ['jpg','jpeg','png','gif','webp','bmp','svg','tiff'];
+          const VIDEO_EXTS = ['mp4','avi','mov','wmv','flv','mkv','webm'];
+          const AUDIO_EXTS = ['mp3','wav','ogg','flac','aac','m4a','wma','opus'];
+          const typeDec = { image: 0, video: 0, audio: 0, other: 0 };
+          keysToDelete.forEach(url => {
+            const ext = url.split('.').pop().toLowerCase();
+            if (IMAGE_EXTS.includes(ext)) typeDec.image++;
+            else if (VIDEO_EXTS.includes(ext)) typeDec.video++;
+            else if (AUDIO_EXTS.includes(ext)) typeDec.audio++;
+            else typeDec.other++;
+          });
+          const tabs = document.querySelectorAll('.filter-tab');
+          const types = ['all', 'image', 'video', 'audio', 'other'];
+          types.forEach((t, i) => {
+            const dec = t === 'all' ? keysToDelete.length : typeDec[t];
+            if (dec === 0) return;
+            const cur = parseInt(tabs[i].dataset.count);
+            if (isNaN(cur)) return;
+            const newCount = cur - dec;
+            tabs[i].dataset.count = newCount;
+            tabs[i].textContent = tabs[i].textContent.split('\uFF08')[0] + '\uFF08' + newCount + '\uFF09';
+          });
+
+          // \u91CD\u7F6E\u9009\u62E9\u72B6\u6001
           selectedKeys.clear();
           selectedCount = 0;
           isAllSelected = false;
+          updateSelectAllButton();
           updateDeleteButton();
 
-          alert('选中的媒体已删除');
+          toastr.success('\u5220\u9664\u6210\u529F');
         }, 300);
       } else {
-        alert('删除失败');
+        toastr.error('\u5220\u9664\u5931\u8D25');
       }
     }
   
-    function copyFormattedLinks(format) {
+    function copySelectedUrls() {
       const urls = Array.from(selectedKeys).map(url => url.trim()).filter(url => url !== '');
-      const formattedLinks = formatLinks(urls, format);
+      const text = urls.join('\\n');
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(formattedLinks).then(() => {
-          alert('复制成功');
+        navigator.clipboard.writeText(text).then(() => {
+          toastr.success('\u590D\u5236\u6210\u529F');
         }).catch(() => {
-          alert('复制失败');
+          toastr.error('\u590D\u5236\u5931\u8D25');
         });
       } else {
         const textarea = document.createElement('textarea');
-        textarea.value = formattedLinks;
+        textarea.value = text;
         document.body.appendChild(textarea);
         textarea.select();
         try {
           document.execCommand('copy');
-          alert('复制成功');
+          toastr.success('\u590D\u5236\u6210\u529F');
         } catch (err) {
-          alert('复制失败');
+          toastr.error('\u590D\u5236\u5931\u8D25');
         }
         document.body.removeChild(textarea);
       }
     }
 
-    function formatLinks(urls, format) {
-      switch (format) {
-        case 'url':
-          return urls.join('\\n\\n');
-        case 'markdown':
-          return urls.map(url => '![image](' + url + ')').join('\\n\\n');
-        default:
-          return urls.join('\\n');
+    function formatFileSize(bytes) {
+      if (!bytes || bytes === 0) return '—';
+      const units = ['B', 'KB', 'MB', 'GB'];
+      let i = 0;
+      let size = bytes;
+      while (size >= 1024 && i < units.length - 1) {
+        size /= 1024;
+        i++;
       }
+      return (i === 0 ? size : size.toFixed(1)) + ' ' + units[i];
     }
 
     function selectAllImages() {
       const mediaContainers = Array.from(document.querySelectorAll('.media-container'));
       const batchSize = 20;
       let index = 0;
+      const isSelectingAll = !isAllSelected;
 
       function processBatch() {
         const end = Math.min(index + batchSize, mediaContainers.length);
 
         for (let i = index; i < end; i++) {
           const container = mediaContainers[i];
-          if (isAllSelected) {
-            container.classList.remove('selected');
-            const key = container.getAttribute('data-key');
-            selectedKeys.delete(key);
-            container.querySelector('.upload-time').style.display = 'none';
-          } else {
+          if (isSelectingAll) {
             if (!container.classList.contains('selected')) {
               container.classList.add('selected');
               const key = container.getAttribute('data-key');
               selectedKeys.add(key);
-              container.querySelector('.upload-time').style.display = 'block';
             }
+          } else {
+            container.classList.remove('selected');
+            const key = container.getAttribute('data-key');
+            selectedKeys.delete(key);
           }
         }
 
@@ -1719,17 +1947,23 @@ async function generateAdminPage(DATABASE, page = 1) {
         if (index < mediaContainers.length) {
           requestAnimationFrame(processBatch);
         } else {
-          if (isAllSelected) {
-            selectedCount = 0;
-          } else {
+          if (isSelectingAll) {
             selectedCount = selectedKeys.size;
+          } else {
+            selectedCount = 0;
           }
-          isAllSelected = !isAllSelected;
+          isAllSelected = isSelectingAll;
+          updateSelectAllButton();
           updateDeleteButton();
         }
       }
 
       requestAnimationFrame(processBatch);
+    }
+
+    function updateSelectAllButton() {
+      const btn = document.getElementById('select-all-button');
+      btn.textContent = isAllSelected ? '取消全选' : '全选';
     }
   
     document.addEventListener('DOMContentLoaded', () => {
@@ -1764,139 +1998,190 @@ async function generateAdminPage(DATABASE, page = 1) {
       mediaContainers.forEach(container => {
         mediaObserver.observe(container);
       });
+
+      // theme toggle
+      const adminSavedTheme = localStorage.getItem('theme');
+      if (adminSavedTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.getElementById('themeToggleAdmin').innerHTML = '<i class="fas fa-moon"></i> 深色模式';
+      } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches && !adminSavedTheme) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.getElementById('themeToggleAdmin').innerHTML = '<i class="fas fa-moon"></i> 深色模式';
+      }
+      document.getElementById('themeToggleAdmin').addEventListener('click', function() {
+        const current = document.documentElement.getAttribute('data-theme');
+        if (current === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'light');
+          this.innerHTML = '<i class="fas fa-sun"></i> 浅色模式';
+          localStorage.setItem('theme', 'light');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          this.innerHTML = '<i class="fas fa-moon"></i> 深色模式';
+          localStorage.setItem('theme', 'dark');
+        }
+      });
     });
-  </script>
+  <\/script>
   </head>
   <body>
-    <h1 class="page-title">图库管理</h1>
-    <div class="header">
-      <div class="header-left">
-        <span>媒体文件 ${totalCount.count} 个</span>
-        <span>已选中: <span id="selected-count">0</span>个</span>
+    <div class="admin-card">
+    <div class="card-header-row" style="position:relative;justify-content:center;margin-bottom:40px">
+      <h1 class="page-title" style="margin:0">Media-FishByte \u56FE\u5E8A\u7BA1\u7406</h1>
+      <div style="position:absolute;right:0;top:50%;transform:translateY(-50%);display:flex;gap:16px;align-items:center">
+        <a href="/" class="btn" id="backToHome" title="\u8FD4\u56DE\u9996\u9875"><i class="fas fa-arrow-left"></i> \u9996\u9875</a>
+        <button type="button" class="btn" id="themeToggleAdmin" title="\u5207\u6362\u4E3B\u9898"><i class="fas fa-sun"></i> \u6D45\u8272\u6A21\u5F0F</button>
       </div>
-      <div class="header-right hidden">
-        <div class="dropdown">
-          <button class="copy-button">复制</button>
-          <div class="dropdown-content">
-            <button onclick="copyFormattedLinks('url')">URL</button>
-            <button onclick="copyFormattedLinks('markdown')">Markdown</button>
-          </div>
+    </div>
+    <div class="filter-tabs">
+      <a href="/admin" class="filter-tab${type === "all" ? " active" : ""}" data-count="${countAll}">\u5168\u90E8\uFF08${countAll}\uFF09</a>
+      <a href="/admin?type=image" class="filter-tab${type === "image" ? " active" : ""}" data-count="${countImage}">\u56FE\u7247\uFF08${countImage}\uFF09</a>
+      <a href="/admin?type=video" class="filter-tab${type === "video" ? " active" : ""}" data-count="${countVideo}">\u89C6\u9891\uFF08${countVideo}\uFF09</a>
+      <a href="/admin?type=audio" class="filter-tab${type === "audio" ? " active" : ""}" data-count="${countAudio}">\u97F3\u9891\uFF08${countAudio}\uFF09</a>
+      <a href="/admin?type=other" class="filter-tab${type === "other" ? " active" : ""}" data-count="${countOther}">\u5176\u4ED6\uFF08${countOther}\uFF09</a>
+    </div>
+    <div class="header">
+      <div class="header-left" data-total="${totalCount.count}">
+        <span>\u5171 ${totalCount.count} \u4E2A\u6587\u4EF6</span>
+        <span class="header-divider">|</span>
+        <span>\u5DF2\u9009\u4E2D <strong id="selected-count">0</strong> \u4E2A</span>
+      </div>
+      <div class="header-actions">
+        <div id="action-buttons">
+          <button class="delete-button" onclick="copySelectedUrls()">\u590D\u5236</button>
+          <button id="delete-button" class="delete-button danger" onclick="deleteSelectedImages()">\u5220\u9664</button>
         </div>
-        <button id="select-all-button" class="delete-button" onclick="selectAllImages()">全选</button>
-        <button id="delete-button" class="delete-button" onclick="deleteSelectedImages()">删除</button>
+        <button id="select-all-button" class="delete-button" onclick="selectAllImages()">\u5168\u9009</button>
       </div>
     </div>
     <div class="gallery">
-      ${mediaData.length === 0 ? '<div class="empty-state"><i>📁</i><div>暂无媒体文件</div></div>' : mediaHtml}
+      ${mediaData.length === 0 ? '<div class="empty-state"><i class="fas fa-cloud-upload-alt"></i><div>\u6682\u65E0\u5A92\u4F53\u6587\u4EF6</div></div>' : mediaHtml}
     </div>
     ${mediaData.length > 0 ? `
     <div class="pagination">
-      <button onclick="goToPage(${page - 1})" ${page <= 1 ? 'disabled' : ''}>上一页</button>
-      <span class="page-info">第 ${page} / ${totalPages} 页 (共 ${totalCount.count} 个)</span>
-      <button onclick="goToPage(${page + 1})" ${page >= totalPages ? 'disabled' : ''}>下一页</button>
+      <button onclick="goToPage(${page - 1})" ${page <= 1 ? "disabled" : ""}>\u4E0A\u4E00\u9875</button>
+      <span class="page-info" data-total="${totalCount.count}">\u7B2C ${page} / ${totalPages} \u9875\uFF08\u5171 ${totalCount.count} \u4E2A\uFF09</span>
+      <button onclick="goToPage(${page + 1})" ${page >= totalPages ? "disabled" : ""}>\u4E0B\u4E00\u9875</button>
     </div>
-    ` : ''}
-    <div class="footer">
-      到底啦
-    </div>
+    ` : ""}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"><\/script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js" integrity="sha512-lbwH47l/tPXJYG9AcFNoJaTMhGvYWhVM9YI43CT+uteTRRaiLCui8snIgyAN8XWgNjNhCqlAUdzZptso6OCoFQ==" crossorigin="anonymous" referrerpolicy="no-referrer"><\/script>
     <script>
+      toastr.options.timeOut = 3000;
+      toastr.options.progressBar = true;
       function goToPage(pageNum) {
         const url = new URL(window.location.href);
         url.searchParams.set('page', pageNum);
         window.location.href = url.toString();
       }
-    </script>
+    <\/script>
+    </div>
   </body>
   </html>
   `;
-  return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+  return new Response(html, { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } });
 }
-
-async function fetchMediaData(DATABASE, limit = null, offset = 0) {
-  let query = 'SELECT url FROM media ORDER BY url DESC';
+__name(generateAdminPage, "generateAdminPage");
+function buildTypeFilter(type) {
+  if (type === "all" || !type) return "";
+  let exts;
+  if (type === "image") exts = SUPPORTED_IMAGE_EXTS;
+  else if (type === "video") exts = SUPPORTED_VIDEO_EXTS;
+  else if (type === "audio") exts = SUPPORTED_AUDIO_EXTS;
+  else if (type === "other") {
+    const allKnown = [...SUPPORTED_IMAGE_EXTS, ...SUPPORTED_VIDEO_EXTS, ...SUPPORTED_AUDIO_EXTS];
+    const conditions = allKnown.map((e) => `url NOT LIKE '%.${e}'`);
+    return "WHERE " + conditions.join(" AND ");
+  }
+  if (exts) {
+    const conditions = exts.map((e) => `url LIKE '%.${e}'`);
+    return "WHERE " + conditions.join(" OR ");
+  }
+  return "";
+}
+__name(buildTypeFilter, "buildTypeFilter");
+async function fetchMediaData(DATABASE, limit = null, offset = 0, whereClause = "") {
+  let query = "SELECT url, COALESCE(size, 0) as size FROM media " + whereClause + " ORDER BY url DESC";
   if (limit !== null) {
     query += ` LIMIT ${limit} OFFSET ${offset}`;
   }
   const result = await DATABASE.prepare(query).all();
-  return result.results.map(row => ({ url: row.url }));
+  return result.results.map((row) => ({ url: row.url, size: row.size }));
 }
-
+__name(fetchMediaData, "fetchMediaData");
 async function handleUploadRequest(request, config) {
   try {
     const formData = await request.formData();
-    const file = formData.get('file');
-    if (!file) throw new Error('缺少文件');
+    const file = formData.get("file");
+    if (!file) throw new Error("\u7F3A\u5C11\u6587\u4EF6");
     const fileExtension = getFileExtension(file.name);
     if (!ALLOWED_EXTENSIONS.has(fileExtension)) {
-      return jsonResponse({ error: `不支持的文件类型: .${fileExtension}` }, 400);
+      return jsonResponse({ error: `\u4E0D\u652F\u6301\u7684\u6587\u4EF6\u7C7B\u578B: .${fileExtension}` }, 400);
     }
     if (file.size > config.maxSize) {
-      return jsonResponse({ error: `文件大小超过${config.maxSize / (1024 * 1024)}MB限制` }, 413);
+      return jsonResponse({ error: `\u6587\u4EF6\u5927\u5C0F\u8D85\u8FC7${config.maxSize / (1024 * 1024)}MB\u9650\u5236` }, 413);
     }
     if (config.enableAuth && !authenticate(request, config.username, config.password)) {
       return unauthorizedResponse();
     }
     const contentType = getContentType(fileExtension);
-    const typePrefix = contentType.startsWith('image/') ? 'image' : contentType.startsWith('video/') ? 'video' : contentType.startsWith('audio/') ? 'audio' : 'other';
+    const typePrefix = contentType.startsWith("image/") ? "image" : contentType.startsWith("video/") ? "video" : contentType.startsWith("audio/") ? "audio" : "other";
     const r2Key = `${typePrefix}_${Date.now()}`;
     await config.r2Bucket.put(r2Key, file.stream(), {
       httpMetadata: { contentType: file.type }
     });
     const imageURL = `https://${config.domain}/${r2Key}.${fileExtension}`;
-    await config.database.prepare('INSERT INTO media (url) VALUES (?) ON CONFLICT(url) DO NOTHING').bind(imageURL).run();
+    await config.database.prepare("INSERT INTO media (url, size) VALUES (?, ?) ON CONFLICT(url) DO NOTHING").bind(imageURL, file.size).run();
     return jsonResponse({ data: imageURL });
   } catch (error) {
-    console.error('R2 上传错误:', error);
+    console.error("R2 \u4E0A\u4F20\u9519\u8BEF:", error);
     return jsonResponse({ error: error.message }, 500);
   }
 }
-
+__name(handleUploadRequest, "handleUploadRequest");
 async function handleImageRequest(request, config) {
   const requestedUrl = request.url;
   const cache = caches.default;
   const cacheKey = new Request(requestedUrl);
   const cachedResponse = await cache.match(cacheKey);
   if (cachedResponse) return cachedResponse;
-  const result = await config.database.prepare('SELECT url FROM media WHERE url = ?').bind(requestedUrl).first();
+  const result = await config.database.prepare("SELECT url FROM media WHERE url = ?").bind(requestedUrl).first();
   if (!result) {
-    const notFoundResponse = new Response('资源不存在', { status: 404 });
+    const notFoundResponse = new Response("\u8D44\u6E90\u4E0D\u5B58\u5728", { status: 404 });
     await cache.put(cacheKey, notFoundResponse.clone());
     return notFoundResponse;
   }
-  const urlParts = requestedUrl.split('/');
+  const urlParts = requestedUrl.split("/");
   const fileName = urlParts[urlParts.length - 1];
-  const [r2Key, fileExtension] = fileName.split('.');
+  const [r2Key, fileExtension] = fileName.split(".");
   const object = await config.r2Bucket.get(r2Key);
   if (!object) {
-    return new Response('获取文件内容失败', { status: 404 });
+    return new Response("\u83B7\u53D6\u6587\u4EF6\u5185\u5BB9\u5931\u8D25", { status: 404 });
   }
   const contentType = getContentType(fileExtension);
   const headers = new Headers();
-  headers.set('Content-Type', contentType);
-  headers.set('Content-Disposition', 'inline');
-  headers.set('Cache-Control', `public, max-age=${CACHE_CONFIG.IMAGE}`);
-  headers.set('CDN-Cache-Control', `public, max-age=${CACHE_CONFIG.IMAGE}`);
+  headers.set("Content-Type", contentType);
+  headers.set("Content-Disposition", "inline");
+  headers.set("Cache-Control", `public, max-age=${CACHE_CONFIG.IMAGE}`);
+  headers.set("CDN-Cache-Control", `public, max-age=${CACHE_CONFIG.IMAGE}`);
   const responseToCache = new Response(object.body, { status: 200, headers });
   await cache.put(cacheKey, responseToCache.clone());
   return responseToCache;
 }
-
-
+__name(handleImageRequest, "handleImageRequest");
 async function handleDeleteImagesRequest(request, config) {
   if (!authenticate(request, config.username, config.password)) {
     return unauthorizedResponse();
   }
-  if (request.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405 });
+  if (request.method !== "POST") {
+    return new Response("Method Not Allowed", { status: 405 });
   }
   try {
     const keysToDelete = await request.json();
     if (!Array.isArray(keysToDelete) || keysToDelete.length === 0) {
-      return jsonResponse({ message: '没有要删除的项' }, 400);
+      return jsonResponse({ message: "\u6CA1\u6709\u8981\u5220\u9664\u7684\u9879" }, 400);
     }
-    const placeholders = keysToDelete.map(() => '?').join(',');
+    const placeholders = keysToDelete.map(() => "?").join(",");
     const cache = caches.default;
-
     const [dbResult] = await Promise.all([
       config.database.prepare(
         `DELETE FROM media WHERE url IN (${placeholders})`
@@ -1904,19 +2189,22 @@ async function handleDeleteImagesRequest(request, config) {
       Promise.all(keysToDelete.map(async (url) => {
         const cacheKey = new Request(url);
         await cache.delete(cacheKey);
-        const urlParts = url.split('/');
+        const urlParts = url.split("/");
         const fileName = urlParts[urlParts.length - 1];
-        const r2Key = fileName.split('.')[0];
+        const r2Key = fileName.split(".")[0];
         await config.r2Bucket.delete(r2Key);
       }))
     ]);
-
     if (dbResult.changes === 0) {
-      return jsonResponse({ message: '未找到要删除的项' }, 404);
+      return jsonResponse({ message: "\u672A\u627E\u5230\u8981\u5220\u9664\u7684\u9879" }, 404);
     }
-
-    return jsonResponse({ message: '删除成功' });
+    return jsonResponse({ message: "\u5220\u9664\u6210\u529F" });
   } catch (error) {
-    return jsonResponse({ error: '删除失败', details: error.message }, 500);
+    return jsonResponse({ error: "\u5220\u9664\u5931\u8D25", details: error.message }, 500);
   }
 }
+__name(handleDeleteImagesRequest, "handleDeleteImagesRequest");
+export {
+  index_default as default
+};
+//# sourceMappingURL=index.js.map
