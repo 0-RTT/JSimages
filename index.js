@@ -579,6 +579,10 @@ async function handleRootRequest(request, config) {
         }
 
         async function handleFileSelection() {
+          if (isCacheVisible) {
+            $('#cacheContent').hide();
+            isCacheVisible = false;
+          }
           const files = $('#fileInput')[0].files;
           const allowedFiles = [];
           const rejectedFiles = [];
@@ -621,8 +625,41 @@ async function handleRootRequest(request, config) {
             if (!originalImageURLs.includes(cachedData.url)) {
                 originalImageURLs.push(cachedData.url);
                 updateFileLinkDisplay();
+                addThumbnailFromCache(cachedData.fileName, cachedData.url);
                 toastr.info('已从缓存中读取数据');
             }
+        }
+
+        function addThumbnailFromCache(fileName, url) {
+            const container = $('#thumbnailContainer');
+            const index = thumbnailData.length;
+            const type = getCacheType(fileName);
+            thumbnailData.push({ previewUrl: url, url, file: null });
+
+            let thumbnailContent = '';
+            if (type === 'image') {
+                thumbnailContent = '<span style="display:block;width:100%;height:100%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);position:relative;overflow:hidden">' +
+                    '<i class="fas fa-image" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.4);font-size:24px"></i>' +
+                    '<img src="' + url + '" alt="thumbnail" loading="lazy" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.style.display=\\'none\\'">' +
+                    '</span>';
+            } else if (type === 'video') {
+                thumbnailContent = '<span style="display:block;width:100%;height:100%;background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);position:relative;overflow:hidden">' +
+                    '<i class="fas fa-play-circle" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.4);font-size:24px"></i>' +
+                    '<video src="' + url + '" muted playsinline preload="metadata" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.style.display=\\'none\\'"></video>' +
+                    '</span>';
+            } else if (type === 'audio') {
+                thumbnailContent = '<div class="file-icon"><i class="fas fa-music"></i></div>';
+            } else {
+                const ext = fileName.split('.').pop().toUpperCase();
+                thumbnailContent = '<div class="file-icon">' + ext + '</div>';
+            }
+
+            const thumbnailHtml = '<div class="thumbnail-item" data-index="' + index + '">' +
+                thumbnailContent +
+                '<button class="remove-btn" title="移除">&times;</button>' +
+            '</div>';
+
+            container.append(thumbnailHtml);
         }
 
         function updateFileLinkDisplay() {
@@ -639,9 +676,15 @@ async function handleRootRequest(request, config) {
 
             let thumbnailContent = '';
             if (file.type.startsWith('image/')) {
-                thumbnailContent = '<img src="' + previewUrl + '" alt="thumbnail">';
+                thumbnailContent = '<span style="display:block;width:100%;height:100%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);position:relative;overflow:hidden">' +
+                    '<i class="fas fa-image" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.4);font-size:24px"></i>' +
+                    '<img src="' + previewUrl + '" alt="thumbnail" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.style.display=\\'none\\'">' +
+                    '</span>';
             } else if (file.type.startsWith('video/')) {
-                thumbnailContent = '<video src="' + previewUrl + '" muted></video>';
+                thumbnailContent = '<span style="display:block;width:100%;height:100%;background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);position:relative;overflow:hidden">' +
+                    '<i class="fas fa-play-circle" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.4);font-size:24px"></i>' +
+                    '<video src="' + previewUrl + '" muted playsinline preload="metadata" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.style.display=\\'none\\'"></video>' +
+                    '</span>';
             } else if (file.type.startsWith('audio/')) {
                 thumbnailContent = '<div class="file-icon"><i class="fas fa-music"></i></div>';
             } else {
@@ -929,7 +972,7 @@ async function handleRootRequest(request, config) {
             isCacheVisible = false;
           } else {
             if (cacheData.length > 0) {
-              let html = '<div class="cache-header"><span>历史记录 <small style="font-weight:400;color:#999;font-size:12px">最多10条</small></span><button class="cache-clear-all" type="button">清除全部</button></div>';
+              let html = '<div class="cache-header"><span>最近上传记录 <small style="font-weight:400;color:#999;font-size:10px">显示10条</small></span><button class="cache-clear-all" type="button">清除全部</button></div>';
               html += cacheData.map((item) => {
                 const type = getCacheType(item.fileName);
                 const truncatedUrl = item.url.length > 50 ? item.url.substring(0, 50) + '...' : item.url;
@@ -981,7 +1024,8 @@ async function handleRootRequest(request, config) {
           e.preventDefault();
           if (!confirm('确定要清除全部历史记录吗？')) return;
           localStorage.removeItem('uploadCache');
-          $('#cacheContent').empty().html('<div style="text-align:center;color:#999;padding:20px;">还没有记录哦！</div>');
+          $('#cacheContent').hide();
+          isCacheVisible = false;
         });
       });
     </script>
