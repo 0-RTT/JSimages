@@ -21,12 +21,12 @@ const CACHE_CONFIG = {
 function extractConfig(env) {
   return {
     domain: env.DOMAIN,
-    database: env.DATABASE,
+    database: env.DB,
     username: env.USERNAME,
     password: env.PASSWORD,
     adminPath: env.ADMIN_PATH,
     enableAuth: env.ENABLE_AUTH === 'true',
-    r2Bucket: env.R2_BUCKET,
+    r2Bucket: env.SB,
     maxSize: (env.MAX_SIZE_MB ? parseInt(env.MAX_SIZE_MB, 10) : 10) * 1024 * 1024
   };
 }
