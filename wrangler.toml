@@ -1,6 +1,6 @@
 name = "media-fishbyte"
 main = "index.js"
-compatibility_date = "2026-05-05"
+compatibility_date = "2026-05-03"
 
 [vars]
 DOMAIN = "media.fishbyte.cc"
