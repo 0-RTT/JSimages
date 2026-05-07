@@ -1350,9 +1350,9 @@ async function handleStatsRequest(config) {
     const result = await config.database.prepare(`
       SELECT
         COUNT(*) as total,
-        SUM(CASE WHEN url LIKE '%/image\\_%' ESCAPE '\\' THEN 1 ELSE 0 END) as images,
-        SUM(CASE WHEN url LIKE '%/video\\_%' ESCAPE '\\' THEN 1 ELSE 0 END) as videos,
-        SUM(CASE WHEN url LIKE '%/audio\\_%' ESCAPE '\\' THEN 1 ELSE 0 END) as audio
+        SUM(CASE WHEN type = 'image' THEN 1 ELSE 0 END) as images,
+        SUM(CASE WHEN type = 'video' THEN 1 ELSE 0 END) as videos,
+        SUM(CASE WHEN type = 'audio' THEN 1 ELSE 0 END) as audio
       FROM media
     `).first();
     return jsonResponse({
@@ -1404,24 +1404,23 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
   const totalCount = await DATABASE.prepare("SELECT COUNT(*) as count FROM media " + typeFilter).first();
   const totalPages = Math.ceil(totalCount.count / pageSize);
   const mediaData = await fetchMediaData(DATABASE, pageSize, offset, typeFilter);
-  const mediaHtml = mediaData.map(({ url, size }) => {
+  const mediaHtml = mediaData.map(({ url, size, type, uploaded_at }) => {
     const fileExtension = url.split(".").pop().toLowerCase();
-    const timestamp = url.split("/").pop().split(".")[0].split("_").pop();
     const escapedUrl = escapeHtml(url);
     const typeLabel = escapeHtml(fileExtension);
     const fileSize = size > 0 ? formatFileSize(size) : "\u2014";
     let gradient, iconColor, iconClass, mediaTag;
-    if (SUPPORTED_IMAGE_EXTS.includes(fileExtension)) {
+    if (type === "image") {
       gradient = "#ffffff";
       iconColor = "#5A5A5A";
       iconClass = "fas fa-image";
       mediaTag = `<img class="media-img" data-src="${escapedUrl}" alt="" draggable="false" onload="this.parentNode.querySelector('i').style.display='none'" onerror="this.style.display='none'">`;
-    } else if (SUPPORTED_VIDEO_EXTS.includes(fileExtension)) {
+    } else if (type === "video") {
       gradient = "linear-gradient(135deg,#F0E8FE 0%,#e0d0fc 100%)";
       iconColor = "#6B46A0";
       iconClass = "fas fa-play-circle";
       mediaTag = `<video class="media-img" data-src="${escapedUrl}" muted playsinline preload="metadata" draggable="false" onloadeddata="this.parentNode.querySelector('i').style.display='none'" onerror="this.style.display='none'"></video>`;
-    } else if (SUPPORTED_AUDIO_EXTS.includes(fileExtension)) {
+    } else if (type === "audio") {
       gradient = "linear-gradient(135deg,#E0F5E9 0%,#c8ecda 100%)";
       iconColor = "#2D6A4F";
       iconClass = "fas fa-music";
@@ -1441,7 +1440,7 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
       </div>
       <div class="media-type">${typeLabel}</div>
       <div class="media-size">${fileSize}</div>
-      <div class="upload-time">\u4E0A\u4F20\u65F6\u95F4: ${escapeHtml(new Date(parseInt(timestamp)).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" }))}</div>
+      <div class="upload-time">${uploaded_at ? escapeHtml(new Date(uploaded_at).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })) : "\u2014"}</div>
     </div>
     `;
   }).join("");
@@ -1451,9 +1450,9 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
   <head>
     <title>\u56FE\u5E8A\u7BA1\u7406 | \u57FA\u4E8ECloudFlare\u7684\u56FE\u5E8A\u670D\u52A1</title>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.css" integrity="sha512-6S2HWzVFxruDlZxI3sXOZZ4/eJ8AcxkQH1+JjSe/ONCEqR9L4Ysq5JdT5ipqtzU7WHalNwzwBv+iE51gNHJNqQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.1/css/bootstrap.min.css" integrity="sha512-T584yQ/tdRR5QwOpfvDfVQUidzfgc2339Lc8uBDtcp/wYu80d7jwBgAxbyMh0a9YM9F8N3tdErpFI8iaGx6x5g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.css" integrity="sha512-6S2HWzVFxruDlZxI3sXOZZ4/eJ8AcxkQH1+JjSe/ONCEqR9L4Ysq5JdT5ipqtzU7WHalNwzwBv+iE51gNHJNqQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
       /* Critical: prevents FOUC */
@@ -1753,13 +1752,14 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
         position: absolute;
         bottom: 34px;
         left: 10px;
-        right: 10px;
         background: var(--card-bg-solid);
         backdrop-filter: blur(4px);
-        padding: 8px 10px;
+        padding: 4px 8px;
         border-radius: 8px;
         color: var(--text-secondary);
-        font-size: 12px;
+        font-size: 11px;
+        font-weight: 500;
+        white-space: nowrap;
         z-index: 10;
         opacity: 0;
         transition: opacity 0.3s ease;
@@ -2319,31 +2319,21 @@ __name2(generateAdminPage, "generateAdminPage");
 __name22(generateAdminPage, "generateAdminPage");
 function buildTypeFilter(type) {
   if (type === "all" || !type) return "";
-  let exts;
-  if (type === "image") exts = SUPPORTED_IMAGE_EXTS;
-  else if (type === "video") exts = SUPPORTED_VIDEO_EXTS;
-  else if (type === "audio") exts = SUPPORTED_AUDIO_EXTS;
-  else if (type === "other") {
-    const allKnown = [...SUPPORTED_IMAGE_EXTS, ...SUPPORTED_VIDEO_EXTS, ...SUPPORTED_AUDIO_EXTS];
-    const conditions = allKnown.map((e) => `url NOT LIKE '%.${e}'`);
-    return "WHERE " + conditions.join(" AND ");
-  }
-  if (exts) {
-    const conditions = exts.map((e) => `url LIKE '%.${e}'`);
-    return "WHERE " + conditions.join(" OR ");
-  }
+  if (type === "other") return "WHERE type NOT IN ('image', 'video', 'audio')";
+  const VALID_TYPES = ["image", "video", "audio"];
+  if (VALID_TYPES.includes(type)) return "WHERE type = '" + type + "'";
   return "";
 }
 __name(buildTypeFilter, "buildTypeFilter");
 __name2(buildTypeFilter, "buildTypeFilter");
 __name22(buildTypeFilter, "buildTypeFilter");
 async function fetchMediaData(DATABASE, limit = null, offset = 0, whereClause = "") {
-  let query = "SELECT url, COALESCE(size, 0) as size FROM media " + whereClause + " ORDER BY CAST(SUBSTR(url, INSTR(url, '_') + 1, INSTR(SUBSTR(url, INSTR(url, '_') + 1), '.') - 1) AS INTEGER) DESC";
+  let query = "SELECT url, COALESCE(size, 0) as size, type, uploaded_at FROM media " + whereClause + " ORDER BY uploaded_at DESC";
   if (limit !== null) {
     query += ` LIMIT ${limit} OFFSET ${offset}`;
   }
   const result = await DATABASE.prepare(query).all();
-  return result.results.map((row) => ({ url: row.url, size: row.size }));
+  return result.results.map((row) => ({ url: row.url, size: row.size, type: row.type, uploaded_at: row.uploaded_at }));
 }
 __name(fetchMediaData, "fetchMediaData");
 __name2(fetchMediaData, "fetchMediaData");
@@ -2370,7 +2360,8 @@ async function handleUploadRequest(request, config) {
       httpMetadata: { contentType: file.type }
     });
     const imageURL = `https://${config.domain}/${r2Key}.${fileExtension}`;
-    await config.database.prepare("INSERT INTO media (url, size) VALUES (?, ?) ON CONFLICT(url) DO NOTHING").bind(imageURL, file.size).run();
+    const now = new Date().toISOString();
+    await config.database.prepare("INSERT INTO media (url, size, type, uploaded_at) VALUES (?, ?, ?, ?) ON CONFLICT(url) DO NOTHING").bind(imageURL, file.size, typePrefix, now).run();
     return jsonResponse({ data: imageURL });
   } catch (error) {
     console.error("R2 \u4E0A\u4F20\u9519\u8BEF:", error);
