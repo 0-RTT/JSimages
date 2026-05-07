@@ -1285,12 +1285,12 @@ t  .badge { display:inline-block; padding:2px 6px; font-size:0.75em; border-radi
                 if (type === 'image') {
                   leftHtml = '<span class="cache-ext" style="background:#ffffff;position:relative;overflow:hidden">' +
                     '<i class="fas fa-image" style="color:#5A5A5A"></i>' +
-                    '<img class="cache-thumb" src="' + item.url + '" alt="" loading="lazy" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onload="this.parentNode.querySelector(\\'i\\').style.display=\\'none\\'" onerror="this.style.display=\\'none\\'">' +
+                    '<img class="cache-thumb" src="' + item.url + '" alt="" loading="lazy" draggable="false" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onload="this.parentNode.querySelector(\\'i\\').style.display=\\'none\\'" onerror="this.style.display=\\'none\\'">' +
                     '</span>';
                 } else if (type === 'video') {
                   leftHtml = '<span class="cache-ext cache-ext-video" style="position:relative;overflow:hidden">' +
                     '<i class="fas fa-play-circle" style="color:#6B46A0"></i>' +
-                    '<video class="cache-thumb" src="' + item.url + '" preload="metadata" muted style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.style.display=\\'none\\'"></video>' +
+                    '<video class="cache-thumb" src="' + item.url + '" preload="metadata" muted draggable="false" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.style.display=\\'none\\'"></video>' +
                     '</span>';
                 } else if (type === 'audio') {
                   leftHtml = '<span class="cache-ext cache-ext-audio"><i class="fas fa-music" style="color:#2D6A4F"></i></span>';
@@ -1415,12 +1415,12 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
       gradient = "#ffffff";
       iconColor = "#5A5A5A";
       iconClass = "fas fa-image";
-      mediaTag = `<img class="media-img" data-src="${escapedUrl}" alt="" onload="this.parentNode.querySelector('i').style.display='none'" onerror="this.style.display='none'">`;
+      mediaTag = `<img class="media-img" data-src="${escapedUrl}" alt="" draggable="false" onload="this.parentNode.querySelector('i').style.display='none'" onerror="this.style.display='none'">`;
     } else if (SUPPORTED_VIDEO_EXTS.includes(fileExtension)) {
       gradient = "linear-gradient(135deg,#F0E8FE 0%,#e0d0fc 100%)";
       iconColor = "#6B46A0";
       iconClass = "fas fa-play-circle";
-      mediaTag = `<video class="media-img" data-src="${escapedUrl}" muted playsinline preload="metadata" onloadeddata="this.parentNode.querySelector('i').style.display='none'" onerror="this.style.display='none'"></video>`;
+      mediaTag = `<video class="media-img" data-src="${escapedUrl}" muted playsinline preload="metadata" draggable="false" onloadeddata="this.parentNode.querySelector('i').style.display='none'" onerror="this.style.display='none'"></video>`;
     } else if (SUPPORTED_AUDIO_EXTS.includes(fileExtension)) {
       gradient = "linear-gradient(135deg,#E0F5E9 0%,#c8ecda 100%)";
       iconColor = "#2D6A4F";
