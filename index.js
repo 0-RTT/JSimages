@@ -2,6 +2,10 @@ var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
 // index.js
+var __defProp2 = Object.defineProperty;
+var __name2 = /* @__PURE__ */ __name((target, value) => __defProp2(target, "name", { value, configurable: true }), "__name");
+var __defProp22 = Object.defineProperty;
+var __name22 = /* @__PURE__ */ __name2((target, value) => __defProp22(target, "name", { value, configurable: true }), "__name");
 var CONTENT_TYPE_MAP = {
   "jpg": "image/jpeg",
   "jpeg": "image/jpeg",
@@ -49,6 +53,8 @@ function extractConfig(env) {
   };
 }
 __name(extractConfig, "extractConfig");
+__name2(extractConfig, "extractConfig");
+__name22(extractConfig, "extractConfig");
 function createCachedResponse(body, contentType, cacheMaxAge) {
   return new Response(body, {
     headers: {
@@ -59,6 +65,8 @@ function createCachedResponse(body, contentType, cacheMaxAge) {
   });
 }
 __name(createCachedResponse, "createCachedResponse");
+__name2(createCachedResponse, "createCachedResponse");
+__name22(createCachedResponse, "createCachedResponse");
 function jsonResponse(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -66,6 +74,8 @@ function jsonResponse(data, status = 200) {
   });
 }
 __name(jsonResponse, "jsonResponse");
+__name2(jsonResponse, "jsonResponse");
+__name22(jsonResponse, "jsonResponse");
 function unauthorizedResponse() {
   return new Response("Unauthorized", {
     status: 401,
@@ -73,14 +83,20 @@ function unauthorizedResponse() {
   });
 }
 __name(unauthorizedResponse, "unauthorizedResponse");
+__name2(unauthorizedResponse, "unauthorizedResponse");
+__name22(unauthorizedResponse, "unauthorizedResponse");
 function getFileExtension(url) {
   return url.split(".").pop().toLowerCase();
 }
 __name(getFileExtension, "getFileExtension");
+__name2(getFileExtension, "getFileExtension");
+__name22(getFileExtension, "getFileExtension");
 function getContentType(extension) {
   return CONTENT_TYPE_MAP[extension] || "application/octet-stream";
 }
 __name(getContentType, "getContentType");
+__name2(getContentType, "getContentType");
+__name22(getContentType, "getContentType");
 function escapeHtml(text) {
   const map = {
     "&": "&amp;",
@@ -92,8 +108,10 @@ function escapeHtml(text) {
   return String(text).replace(/[&<>"']/g, (m) => map[m]);
 }
 __name(escapeHtml, "escapeHtml");
+__name2(escapeHtml, "escapeHtml");
+__name22(escapeHtml, "escapeHtml");
 function formatFileSize(bytes) {
-  if (!bytes || bytes === 0) return "—";
+  if (!bytes || bytes === 0) return "\u2014";
   const units = ["B", "KB", "MB", "GB"];
   let i = 0;
   let size = bytes;
@@ -104,6 +122,8 @@ function formatFileSize(bytes) {
   return (i === 0 ? size : size.toFixed(1)) + " " + units[i];
 }
 __name(formatFileSize, "formatFileSize");
+__name2(formatFileSize, "formatFileSize");
+__name22(formatFileSize, "formatFileSize");
 var index_default = {
   async fetch(request, env) {
     const { pathname } = new URL(request.url);
@@ -136,6 +156,8 @@ function authenticate(request, username, password) {
   }
 }
 __name(authenticate, "authenticate");
+__name2(authenticate, "authenticate");
+__name22(authenticate, "authenticate");
 async function handleRootRequest(request, config) {
   const cache = caches.default;
   const cacheKey = new Request(request.url);
@@ -152,14 +174,22 @@ async function handleRootRequest(request, config) {
   <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Media-FishByte | \u57FA\u4E8ECloudFlare\u7684\u56FE\u5E8A\u670D\u52A1">
-  <meta name="keywords" content="Media-FishByte,Workers,R2\u50A8\u5B58, Cloudflare,\u56FE\u5E8A">
-  <title>Media-FishByte | \u57FA\u4E8ECloudFlare\u7684\u56FE\u5E8A\u670D\u52A1</title>
+  <meta name="description" content="Media - FishByte | \u57FA\u4E8ECloudFlare\u7684\u56FE\u5E8A\u670D\u52A1">
+  <meta name="keywords" content="Media - FishByte,Workers,R2\u50A8\u5B58, Cloudflare,\u56FE\u5E8A">
+  <title>Media - FishByte | \u57FA\u4E8ECloudFlare\u7684\u56FE\u5E8A\u670D\u52A1</title>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.1/css/bootstrap.min.css" integrity="sha512-T584yQ/tdRR5QwOpfvDfVQUidzfgc2339Lc8uBDtcp/wYu80d7jwBgAxbyMh0a9YM9F8N3tdErpFI8iaGx6x5g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-fileinput/5.2.7/css/fileinput.min.css" integrity="sha512-qPjB0hQKYTx1Za9Xip5h0PXcxaR1cRbHuZHo9z+gb5IgM6ZOTtIH4QLITCxcCp/8RMXtw2Z85MIZLv6LfGTLiw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.css" integrity="sha512-6S2HWzVFxruDlZxI3sXOZZ4/eJ8AcxkQH1+JjSe/ONCEqR9L4Ysq5JdT5ipqtzU7WHalNwzwBv+iE51gNHJNqQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
+t  /* Critical: prevents FOUC for Bootstrap-dependent elements */
+t  .btn { display:inline-flex; align-items:center; justify-content:center; font-weight:500; border-radius:8px; padding:6px 16px; cursor:pointer; }
+t  .btn-primary { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; }
+t  .form-control { display:block; width:100%; padding:6px 12px; border-radius:8px; border:1px solid #ddd; }
+t  .progress { display:flex; height:22px; border-radius:6px; background:#e9ecef; }
+t  .progress-bar { display:flex; align-items:center; justify-content:center; color:#fff; }
+t  .badge { display:inline-block; padding:2px 6px; font-size:0.75em; border-radius:10px; }
   :root {
       --bg-gradient: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #4facfe);
       --card-bg: rgba(255, 255, 255, 0.95);
@@ -172,6 +202,7 @@ async function handleRootRequest(request, config) {
       --accent-hover: #764ba2;
       --accent-light: rgba(102, 126, 234, 0.1);
       --accent-light-hover: rgba(102, 126, 234, 0.05);
+      --border-light: rgba(255, 255, 255, 0.6);
       --cache-bg: white;
       --cache-border: rgba(102, 126, 234, 0.1);
       --danger: #e74c3c;
@@ -193,6 +224,7 @@ async function handleRootRequest(request, config) {
       --accent-hover: #c084fc;
       --accent-light: rgba(167, 139, 250, 0.15);
       --accent-light-hover: rgba(167, 139, 250, 0.08);
+      --border-light: rgba(255, 255, 255, 0.08);
       --cache-bg: #2a2a45;
       --cache-border: rgba(167, 139, 250, 0.15);
       --danger: #ef4444;
@@ -216,15 +248,6 @@ async function handleRootRequest(request, config) {
           background: rgba(255,255,255,0.2);
           border-radius: 3px;
       }
-      #urlBtn.btn-light {
-          background-color: #2a2a45;
-          color: #a78bfa;
-          border-color: rgba(167, 139, 250, 0.15);
-      }
-      #urlBtn.btn-light:hover {
-          background-color: rgba(167, 139, 250, 0.15);
-          border-color: #a78bfa;
-      }
   }
       body {
           margin: 0;
@@ -244,34 +267,36 @@ async function handleRootRequest(request, config) {
       }
       .card {
           background: var(--card-bg);
-          border: none;
+          border: 1px solid var(--border-light);
           border-radius: 16px;
           box-shadow: var(--card-shadow);
           padding: 30px;
           width: 90%;
-          max-width: 480px;
-          text-align: center;
+          max-width: 540px;
           margin: 0 auto;
           position: relative;
       }
       .title {
-          font-size: 28px;
+          font-size: 32px;
           font-weight: 700;
           background: var(--title-gradient);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
-          margin-bottom: 0;
+          margin: 0;
           letter-spacing: 0.5px;
-          flex: 1;
-          text-align: center;
       }
       .card-header-row {
           display: flex;
           align-items: center;
           justify-content: space-between;
           margin-bottom: 20px;
-          gap: 12px;
+      }
+      .card-header-row .header-buttons {
+          display: flex;
+          gap: 16px;
+          align-items: center;
+          flex-shrink: 0;
       }
       #themeToggle {
           background: none;
@@ -293,7 +318,7 @@ async function handleRootRequest(request, config) {
           margin-top: 20px;
       }
       .btn-group-spacing {
-          margin-bottom: 30px;
+          margin-bottom: 20px !important;
       }
       #viewCacheBtn,
       #adminLink {
@@ -312,7 +337,10 @@ async function handleRootRequest(request, config) {
       #viewCacheBtn:focus,
       #adminLink:focus,
       #themeToggle:focus {
-          outline: none;
+          outline: 2px solid var(--accent);
+          outline-offset: 3px;
+          border-radius: 4px;
+          box-shadow: none !important;
       }
       #viewCacheBtn:hover,
       #adminLink:hover {
@@ -335,10 +363,7 @@ async function handleRootRequest(request, config) {
           background: var(--scrollbar-thumb);
           border-radius: 2px;
       }
-      .cache-title {
-          text-align: left;
-          margin-bottom: 10px;
-      }
+
       .cache-item {
           display: flex;
           align-items: center;
@@ -371,7 +396,7 @@ async function handleRootRequest(request, config) {
       }
       .cache-ext-video { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
       .cache-ext-audio { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-      .cache-ext-other { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color: #666; }
+
       .cache-thumb {
           flex-shrink: 0;
           width: 40px;
@@ -443,8 +468,9 @@ async function handleRootRequest(request, config) {
       .upload-hint {
           color: #999;
           font-size: 14px;
-          margin: 15px 0 20px 0;
+          margin: 12px 0 16px 0;
           line-height: 1.6;
+          text-align: center;
       }
       .upload-hint i {
           color: var(--accent);
@@ -453,7 +479,7 @@ async function handleRootRequest(request, config) {
       .project-link {
           font-size: 13px;
           text-align: center;
-          margin-top: 15px;
+          margin-top: 12px;
           margin-bottom: 0;
           color: #999;
           line-height: 1.6;
@@ -470,7 +496,7 @@ async function handleRootRequest(request, config) {
       .stats-line {
           font-size: 13px;
           text-align: center;
-          margin-top: 10px;
+          margin-top: 8px;
           margin-bottom: 0;
           color: #999;
       }
@@ -483,19 +509,38 @@ async function handleRootRequest(request, config) {
           resize: none;
       }
       .file-input-container {
-          margin-bottom: 30px !important;
+          margin-bottom: 20px !important;
       }
       #fileLink-group.form-group {
-          margin: 30px 0 25px 0 !important;
+          margin: 20px 0 20px 0 !important;
       }
-      .input-group-append {
-          margin-left: 12px !important;
-      }
+
       .file-caption-name {
           padding-left: 10px !important;
       }
+      .file-input .input-group {
+          gap: 12px;
+      }
       .fileinput-remove-button {
           margin-right: 12px !important;
+      }
+      .btn-file > input {
+          position: absolute !important;
+          top: -9999px !important;
+          left: -9999px !important;
+          width: 1px !important;
+          height: 1px !important;
+          opacity: 0 !important;
+      }
+      .btn-file {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.3s ease;
+      }
+      .btn-file:hover {
+          transform: translateY(-2px) !important;
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
       }
       .upload-progress {
           display: none;
@@ -506,7 +551,6 @@ async function handleRootRequest(request, config) {
           font-size: 13px;
           font-weight: 500;
           letter-spacing: 0.5px;
-          border-radius: 4px;
       }
       .thumbnail-container {
           display: flex;
@@ -521,7 +565,7 @@ async function handleRootRequest(request, config) {
           height: 80px;
           border-radius: 8px;
           overflow: hidden;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          box-shadow: var(--thumbnail-shadow);
           transition: transform 0.2s ease;
       }
       .thumbnail-item:hover {
@@ -600,9 +644,6 @@ async function handleRootRequest(request, config) {
       .btn-light:active {
           transform: translateY(0);
       }
-      #urlBtn.btn-light {
-          border: 1px solid var(--accent);
-      }
       @media (max-width: 768px) {
           .card {
               width: 95%;
@@ -668,10 +709,12 @@ async function handleRootRequest(request, config) {
       <div id="dragOverlay"><div class="drag-hint"><i class="fas fa-cloud-upload-alt"></i><p>\u62D6\u62FD\u6587\u4EF6\u5230\u6B64\u5904\u4E0A\u4F20</p></div></div>
       <div class="card">
       <div class="card-header-row">
-        <div class="title">Media-FishByte</div>
-        <a href="/admin" class="btn" id="adminLink" title="\u7BA1\u7406\u9875\u9762"><i class="fas fa-arrow-right"></i></a>
-        <button type="button" class="btn" id="themeToggle" title="\u5207\u6362\u4E3B\u9898"><i class="fas fa-sun"></i></button>
-        <button type="button" class="btn" id="viewCacheBtn" title="\u67E5\u770B\u6700\u8FD1\u4E0A\u4F20\u8BB0\u5F55"><i class="fas fa-clock"></i></button>
+        <h1 class="title" style="margin:0">Media - FishByte</h1>
+        <div class="header-buttons">
+          <a href="/admin" class="btn" id="adminLink" title="\u7BA1\u7406\u9875\u9762"><i class="fas fa-arrow-right"></i></a>
+          <button type="button" class="btn" id="themeToggle" title="\u5207\u6362\u4E3B\u9898"><i class="fas fa-sun"></i></button>
+          <button type="button" class="btn" id="viewCacheBtn" title="\u67E5\u770B\u6700\u8FD1\u4E0A\u4F20\u8BB0\u5F55"><i class="fas fa-clock"></i></button>
+        </div>
       </div>
       <div class="card-body">
           <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
@@ -681,16 +724,13 @@ async function handleRootRequest(request, config) {
               <div class="upload-hint">
                   <i class="fas fa-info-circle"></i>\u652F\u6301\u6279\u91CF\u4E0A\u4F20\u3001\u62D6\u62FD\u4E0A\u4F20\u3001\u7C98\u8D34\u4E0A\u4F20
               </div>
-              <div id="fileLink-group" class="form-group mb-3 uniform-height" style="display: none;">
+              <div id="fileLink-group" class="form-group mb-3 uniform-height btn-group-spacing" style="display: none;">
                   <textarea class="form-control" id="fileLink" readonly></textarea>
-              </div>
-              <div class="form-group mb-3 uniform-height btn-group-spacing" style="display: none;">
-                  <button type="button" class="btn btn-light" id="urlBtn">\u590D\u5236\u94FE\u63A5</button>
               </div>
               <div class="upload-progress" id="uploadProgress">
                   <div style="font-size:13px;color:var(--text-secondary);margin-bottom:6px;text-align:center">\u4E0A\u4F20\u4E2D...</div>
-                  <div class="progress" style="height:22px;border-radius:6px;background:var(--accent-light)">
-                      <div class="progress-bar progress-bar-striped progress-bar-animated" id="progressBar" role="progressbar" style="width:0%;border-radius:6px">0%</div>
+                  <div class="progress" style="height:22px;border-radius:6px">
+                      <div class="progress-bar progress-bar-striped" id="progressBar" role="progressbar" style="width:0%">0%</div>
                   </div>
               </div>
               <div class="thumbnail-container" id="thumbnailContainer"></div>
@@ -721,6 +761,13 @@ async function handleRootRequest(request, config) {
         let resettingUnsupported = false;
         let activeXHRs = [];
         initFileInput();
+        $('.btn-file').attr('title', '\u9009\u62E9\u6587\u4EF6');
+        $(window).on('focus', function() {
+            setTimeout(function() {
+                $('.file-input').removeClass('file-thumb-loading');
+                $('.file-caption-name').removeClass('file-processing');
+            }, 100);
+        });
         fetchStats();
 
         function initFileInput() {
@@ -801,15 +848,24 @@ async function handleRootRequest(request, config) {
             }, 0);
             return;
           }
-          for (let i = 0; i < allowedFiles.length; i++) {
-            const file = allowedFiles[i];
-            const fileHash = await calculateFileHash(file);
-            const cachedData = getCachedData(fileHash);
-            if (cachedData) {
-                handleCachedFile(cachedData);
-            } else {
-                await uploadFile(file, fileHash);
+          try {
+            for (let i = 0; i < allowedFiles.length; i++) {
+              const file = allowedFiles[i];
+              const fileHash = await calculateFileHash(file);
+              const cachedData = getCachedData(fileHash);
+              if (cachedData) {
+                  handleCachedFile(cachedData);
+              } else {
+                  await uploadFile(file, fileHash);
+              }
             }
+            if (originalImageURLs.length > 0) {
+              copyToClipboardWithToastr(originalImageURLs.join('\\n'));
+            }
+          } catch (error) {
+            console.error('\u5904\u7406\u6587\u4EF6\u65F6\u51FA\u73B0\u9519\u8BEF:', error);
+            $('#uploadProgress').hide();
+            toastr.error('\u6587\u4EF6\u5904\u7406\u5931\u8D25');
           }
         }
 
@@ -861,6 +917,7 @@ async function handleRootRequest(request, config) {
         function updateFileLinkDisplay() {
             $('#fileLink').val(originalImageURLs.join('\\n'));
             $('.form-group').show();
+            $('.upload-hint, .project-link, .stats-line').hide();
             adjustTextareaHeight($('#fileLink')[0]);
         }
 
@@ -964,18 +1021,24 @@ async function handleRootRequest(request, config) {
             $('#uploadProgress').hide();
             if (responseData.error) {
               toastr.error(responseData.error);
+              if (originalImageURLs.length === 0) {
+                $('#fileInput').fileinput('clear');
+              }
             } else {
               originalImageURLs.push(responseData.data);
               addThumbnail(file, responseData.data);
               $('#fileLink').val(originalImageURLs.join('\\n'));
               $('.form-group').show();
+              $('.upload-hint, .project-link, .stats-line').hide();
               adjustTextareaHeight($('#fileLink')[0]);
-              toastr.success('\u4E0A\u4F20\u6210\u529F\uFF01\u8BF7\u81EA\u884C\u590D\u5236\u94FE\u63A5');
               saveToLocalCache(responseData.data, file.name, fileHash);
             }
           } catch (error) {
             console.error('\u5904\u7406\u6587\u4EF6\u65F6\u51FA\u73B0\u9519\u8BEF:', error);
             $('#uploadProgress').hide();
+            if (originalImageURLs.length === 0) {
+              $('#fileInput').fileinput('clear');
+            }
             let errorMsg = '\u6587\u4EF6\u5904\u7406\u5931\u8D25';
             if (error.message.includes('\u7F51\u7EDC')) {
               errorMsg = '\u7F51\u7EDC\u9519\u8BEF\uFF0C\u8BF7\u68C0\u67E5\u7F51\u7EDC\u8FDE\u63A5';
@@ -1062,16 +1125,12 @@ async function handleRootRequest(request, config) {
           }
         });
     
-        $('#urlBtn').on('click', function() {
-          const fileLinks = originalImageURLs.map(url => url.trim()).filter(url => url !== '');
-          if (fileLinks.length > 0) {
-            const formattedLinks = fileLinks.join('\\n');
-            $('#fileLink').val(formattedLinks);
-            adjustTextareaHeight($('#fileLink')[0]);
-            copyToClipboardWithToastr(formattedLinks);
+        $(document).on('click', '.btn-file', function(e) {
+          if (!$(e.target).is('input')) {
+            $('#fileInput').trigger('click');
           }
         });
-    
+
         function handleFileClear(event) {
           if (resettingUnsupported) {
             resettingUnsupported = false;
@@ -1125,7 +1184,8 @@ async function handleRootRequest(request, config) {
         }
 
         function hideButtonsAndTextarea() {
-          $('#urlBtn, #fileLink').parent('.form-group').hide();
+          $('#fileLink').parent('.form-group').hide();
+          $('.upload-hint, .project-link, .stats-line').show();
         }
 
         function saveToLocalCache(url, fileName, fileHash) {
@@ -1151,6 +1211,9 @@ async function handleRootRequest(request, config) {
           if (isCacheVisible) {
             cacheContent.hide();
             isCacheVisible = false;
+            if (originalImageURLs.length === 0) {
+              $('.upload-hint, .project-link, .stats-line').show();
+            }
           } else {
             if (cacheData.length > 0) {
               let html = '<div class="cache-header"><span>\u6700\u8FD1\u4E0A\u4F20\u8BB0\u5F55 <small style="font-weight:400;color:#999;font-size:10px">\u663E\u793A10\u6761</small></span><button class="cache-clear-all" type="button">\u6E05\u9664\u5168\u90E8</button></div>';
@@ -1187,6 +1250,7 @@ async function handleRootRequest(request, config) {
               cacheContent.html('<div style="text-align:center;color:#999;padding:20px;">\u8FD8\u6CA1\u6709\u8BB0\u5F55\u54E6\uFF01</div>').show();
             }
             isCacheVisible = true;
+            $('.upload-hint, .project-link, .stats-line').hide();
           }
         });
 
@@ -1217,6 +1281,8 @@ async function handleRootRequest(request, config) {
   return response;
 }
 __name(handleRootRequest, "handleRootRequest");
+__name2(handleRootRequest, "handleRootRequest");
+__name22(handleRootRequest, "handleRootRequest");
 async function handleStatsRequest(config) {
   try {
     const result = await config.database.prepare(`
@@ -1239,6 +1305,8 @@ async function handleStatsRequest(config) {
   }
 }
 __name(handleStatsRequest, "handleStatsRequest");
+__name2(handleStatsRequest, "handleStatsRequest");
+__name22(handleStatsRequest, "handleStatsRequest");
 async function handleAdminRequest(request, config) {
   if (!authenticate(request, config.username, config.password)) {
     return unauthorizedResponse();
@@ -1249,6 +1317,8 @@ async function handleAdminRequest(request, config) {
   return await generateAdminPage(config.database, page, type);
 }
 __name(handleAdminRequest, "handleAdminRequest");
+__name2(handleAdminRequest, "handleAdminRequest");
+__name22(handleAdminRequest, "handleAdminRequest");
 async function generateAdminPage(DATABASE, page = 1, type = "all") {
   try {
     await DATABASE.prepare("ALTER TABLE media ADD COLUMN size INTEGER DEFAULT 0").run();
@@ -1262,7 +1332,7 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
     DATABASE.prepare("SELECT COUNT(*) as count FROM media " + buildTypeFilter("image")).first(),
     DATABASE.prepare("SELECT COUNT(*) as count FROM media " + buildTypeFilter("video")).first(),
     DATABASE.prepare("SELECT COUNT(*) as count FROM media " + buildTypeFilter("audio")).first(),
-    DATABASE.prepare("SELECT COUNT(*) as count FROM media " + buildTypeFilter("other")).first(),
+    DATABASE.prepare("SELECT COUNT(*) as count FROM media " + buildTypeFilter("other")).first()
   ]);
   const countAll = rAll.count;
   const countImage = rImage.count;
@@ -1277,7 +1347,7 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
     const timestamp = url.split("/").pop().split(".")[0].split("_").pop();
     const escapedUrl = escapeHtml(url);
     const typeLabel = escapeHtml(fileExtension);
-    const fileSize = size > 0 ? formatFileSize(size) : "—";
+    const fileSize = size > 0 ? formatFileSize(size) : "\u2014";
     let gradient, iconClass, mediaTag;
     if (SUPPORTED_IMAGE_EXTS.includes(fileExtension)) {
       gradient = "linear-gradient(135deg,#667eea 0%,#764ba2 100%)";
@@ -1313,16 +1383,26 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
   <!DOCTYPE html>
   <html>
   <head>
-    <title>Media-FishByte \u56FE\u5E8A\u7BA1\u7406 | \u57FA\u4E8ECloudFlare\u7684\u56FE\u5E8A\u670D\u52A1</title>
+    <title>\u56FE\u5E8A\u7BA1\u7406 | \u57FA\u4E8ECloudFlare\u7684\u56FE\u5E8A\u670D\u52A1</title>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.css" integrity="sha512-6S2HWzVFxruDlZxI3sXOZZ4/eJ8AcxkQH1+JjSe/ONCEqR9L4Ysq5JdT5ipqtzU7WHalNwzwBv+iE51gNHJNqQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.1/css/bootstrap.min.css" integrity="sha512-T584yQ/tdRR5QwOpfvDfVQUidzfgc2339Lc8uBDtcp/wYu80d7jwBgAxbyMh0a9YM9F8N3tdErpFI8iaGx6x5g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+      /* Critical: prevents FOUC */
+      .btn { display:inline-flex; align-items:center; justify-content:center; font-weight:500; border-radius:10px; padding:6px 16px; cursor:pointer; }
+      .btn-primary { background:var(--title-gradient); color:#fff; }
+      .badge { display:inline-block; padding:2px 6px; font-size:0.75em; border-radius:10px; white-space:nowrap; }
+      .nav-pills .nav-link { display:inline-flex; align-items:center; justify-content:center; padding:6px 16px; border-radius:20px; }
+      .pagination { display:flex; list-style:none; justify-content:center; gap:8px; }
+      .page-link { display:block; padding:8px 16px; border-radius:8px; cursor:pointer; }
+      .form-control { display:block; width:100%; padding:6px 12px; border-radius:8px; }
       :root {
         --bg-gradient: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #4facfe);
-        --card-bg: rgba(255, 255, 255, 0.9);
+        --card-bg: rgba(255, 255, 255, 0.95);
         --card-bg-solid: rgba(255, 255, 255, 0.95);
-        --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
         --title-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         --text-primary: #333;
         --text-secondary: #555;
@@ -1338,9 +1418,9 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
       }
       [data-theme="dark"] {
         --bg-gradient: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #1a1a3e);
-        --card-bg: rgba(30, 30, 50, 0.9);
+        --card-bg: rgba(30, 30, 50, 0.95);
         --card-bg-solid: rgba(30, 30, 50, 0.95);
-        --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         --title-gradient: linear-gradient(135deg, #a78bfa 0%, #c084fc 100%);
         --text-primary: #e0e0e0;
         --text-secondary: #b0b0b0;
@@ -1414,31 +1494,96 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
       }
       .filter-tabs {
         display: flex;
-        gap: 8px;
+        gap: 12px;
         margin-bottom: 20px;
         flex-wrap: wrap;
       }
-      .filter-tab {
-        padding: 5px 16px;
-        border-radius: 20px;
-        font-size: 14px;
-        text-decoration: none;
-        color: var(--text-secondary);
-        background: var(--card-bg);
-        border: 1px solid var(--border-light);
-        transition: all 0.3s ease;
-        cursor: pointer;
-        line-height: 1.6;
+      .nav-pills .nav-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 16px;
+        border-radius: 20px !important;
+        color: var(--text-secondary) !important;
+        background: var(--accent-light) !important;
+        transition: all 0.3s ease !important;
+        position: relative;
       }
-      .filter-tab:hover {
-        color: var(--accent);
-        border-color: var(--accent);
-        transform: translateY(-1px);
+      .nav-pills .nav-link:hover {
+        background: rgba(102, 126, 234, 0.2) !important;
+        color: var(--accent) !important;
       }
-      .filter-tab.active {
-        color: white;
-        background: var(--title-gradient);
-        border-color: transparent;
+      .nav-pills .nav-link.active {
+        background: var(--title-gradient) !important;
+        color: #fff !important;
+      }
+      .filter-tabs .nav-link .badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        font-size: 0.75em;
+        padding: 2px 6px;
+        border-radius: 10px !important;
+        background: var(--accent) !important;
+        color: #fff !important;
+      }
+      .filter-tabs .nav-link:not(.active) .badge {
+        background: var(--card-bg) !important;
+        color: var(--text-primary) !important;
+      }
+
+      .btn-primary {
+        background: var(--title-gradient) !important;
+        border: none !important;
+        color: #fff !important;
+        border-radius: 10px !important;
+        font-weight: 500 !important;
+        box-shadow: 0 4px 15px var(--hover-shadow) !important;
+        transition: all 0.3s ease !important;
+      }
+      .btn-primary:hover, .btn-primary:focus {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px var(--hover-shadow) !important;
+      }
+      .btn-danger {
+        background: linear-gradient(135deg, var(--danger) 0%, #c0392b 100%) !important;
+        border: none !important;
+        color: #fff !important;
+        border-radius: 10px !important;
+        font-weight: 500 !important;
+        box-shadow: 0 4px 15px var(--hover-shadow) !important;
+      }
+      .btn-danger:hover, .btn-danger:focus {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px var(--hover-shadow) !important;
+      }
+      .btn-outline-primary {
+        color: var(--accent) !important;
+        border-color: var(--accent) !important;
+        border-radius: 10px !important;
+        font-weight: 500 !important;
+      }
+      .btn-outline-primary:hover, .btn-outline-primary:focus {
+        background: var(--accent-light) !important;
+        color: var(--accent-hover) !important;
+        border-color: var(--accent-hover) !important;
+        transform: translateY(-2px);
+      }
+      .page-link {
+        background: var(--accent-light) !important;
+        color: var(--accent) !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-weight: 500 !important;
+      }
+      .page-link:hover, .page-link:focus {
+        background: var(--accent) !important;
+        color: #fff !important;
+      }
+      .page-item.disabled .page-link {
+        background: var(--accent-light) !important;
+        color: var(--accent) !important;
+        opacity: 0.4;
       }
       #backToHome,
       #themeToggleAdmin {
@@ -1456,31 +1601,15 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
       }
       #backToHome:focus,
       #themeToggleAdmin:focus {
-          outline: none;
+          outline: 2px solid var(--accent);
+          outline-offset: 3px;
+          border-radius: 4px;
+          box-shadow: none !important;
       }
       #backToHome:hover,
       #themeToggleAdmin:hover {
         opacity: 1;
         transform: scale(1.1);
-      }
-      .header-left {
-        flex: 1;
-        display: flex;
-        gap: 15px;
-        align-items: center;
-        color: var(--text-secondary);
-        font-weight: 500;
-      }
-      .header-actions {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-shrink: 0;
-      }
-      .header-divider {
-        color: var(--text-muted);
-        opacity: 0.4;
-        font-size: 14px;
       }
       #action-buttons {
         display: none;
@@ -1615,64 +1744,18 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
         pointer-events: none;
       }
 
-      .delete-button {
-        background: var(--title-gradient);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        padding: 10px 20px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        width: auto;
-        font-weight: 500;
-        box-shadow: 0 4px 15px var(--hover-shadow);
-      }
-      .delete-button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px var(--hover-shadow);
-      }
-      .delete-button:active {
-        transform: translateY(0);
-      }
-      .delete-button.danger {
-        background: linear-gradient(135deg, var(--danger) 0%, #c0392b 100%);
-      }
       #preview-button {
-        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
+        border: none !important;
       }
-      .pagination {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 12px;
-        margin: 8px 0 0 0;
-        flex-wrap: wrap;
-        padding: 16px 0 0 0;
-        border-top: 1px solid var(--border-light);
+      .page-item.disabled .page-link.page-info {
+        background: transparent !important;
+        border: none !important;
+        color: var(--text-secondary) !important;
       }
-      .pagination button {
-        background: var(--accent-light);
-        color: var(--accent);
-        border: 1px solid transparent;
-        border-radius: 8px;
-        padding: 8px 20px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        font-weight: 500;
-      }
-      .pagination button:hover:not(:disabled) {
-        background: var(--accent);
-        color: white;
-        border-color: var(--accent);
-      }
-      .pagination button:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-      }
-      .pagination .page-info {
-        color: var(--text-secondary);
-        font-weight: 500;
-        padding: 0 15px;
+      .page-item.active .page-link {
+        background: var(--accent) !important;
+        color: #fff !important;
       }
       .empty-state {
         text-align: center;
@@ -1697,9 +1780,9 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
       @media (prefers-color-scheme: dark) {
         :root:not([data-theme="light"]) {
           --bg-gradient: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #1a1a3e);
-          --card-bg: rgba(30, 30, 50, 0.9);
+          --card-bg: rgba(30, 30, 50, 0.95);
           --card-bg-solid: rgba(30, 30, 50, 0.95);
-          --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+          --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
           --title-gradient: linear-gradient(135deg, #a78bfa 0%, #c084fc 100%);
           --text-primary: #e0e0e0;
           --text-secondary: #b0b0b0;
@@ -1772,37 +1855,12 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
           padding: 8px 12px;
           border-radius: 8px;
         }
-        .header-left {
-          font-size: 14px;
-          margin-bottom: 8px;
-        }
-        .header-actions {
-          width: 100%;
-          justify-content: flex-end;
-        }
         .gallery {
           grid-template-columns: repeat(2, 1fr);
           gap: 12px;
         }
         .media-container {
           border-radius: 12px;
-        }
-        .delete-button {
-          padding: 8px 16px;
-          font-size: 14px;
-          min-height: 44px;
-          border-radius: 8px;
-        }
-        .pagination {
-          padding: 12px 0 0 0;
-          gap: 8px;
-        }
-        .pagination button {
-          padding: 8px 16px;
-          font-size: 14px;
-        }
-        .pagination .page-info {
-          font-size: 14px;
         }
       }
     </style>
@@ -1886,7 +1944,7 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
           containersToRemove.forEach(container => container.remove());
 
           // \u66F4\u65B0\u5A92\u4F53\u6587\u4EF6\u603B\u6570
-          const headerLeft = document.querySelector('.header-left');
+          const headerLeft = document.querySelector('[data-total]');
           const newTotal = parseInt(headerLeft.dataset.total) - keysToDelete.length;
           headerLeft.dataset.total = newTotal;
           headerLeft.querySelector('span:first-child').textContent = '\u5171 ' + newTotal + ' \u4E2A\u6587\u4EF6';
@@ -1911,7 +1969,7 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
             else if (AUDIO_EXTS.includes(ext)) typeDec.audio++;
             else typeDec.other++;
           });
-          const tabs = document.querySelectorAll('.filter-tab');
+          const tabs = document.querySelectorAll('.nav-pills .nav-link');
           const types = ['all', 'image', 'video', 'audio', 'other'];
           types.forEach((t, i) => {
             const dec = t === 'all' ? keysToDelete.length : typeDec[t];
@@ -1920,7 +1978,7 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
             if (isNaN(cur)) return;
             const newCount = cur - dec;
             tabs[i].dataset.count = newCount;
-            tabs[i].textContent = tabs[i].textContent.split('\uFF08')[0] + '\uFF08' + newCount + '\uFF09';
+            const b = tabs[i].querySelector('.badge'); if (b) b.textContent = newCount;
           });
 
           // \u91CD\u7F6E\u9009\u62E9\u72B6\u6001
@@ -1962,7 +2020,7 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
     }
 
     function formatFileSize(bytes) {
-      if (!bytes || bytes === 0) return '—';
+      if (!bytes || bytes === 0) return '\u2014';
       const units = ['B', 'KB', 'MB', 'GB'];
       let i = 0;
       let size = bytes;
@@ -2018,7 +2076,7 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
 
     function updateSelectAllButton() {
       const btn = document.getElementById('select-all-button');
-      btn.textContent = isAllSelected ? '取消全选' : '全选';
+      btn.textContent = isAllSelected ? '\u53D6\u6D88\u5168\u9009' : '\u5168\u9009';
     }
 
     function previewMedia() {
@@ -2037,7 +2095,7 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
       } else if (AUD.includes(ext)) {
         html = '<div style="text-align:center;padding:40px;color:white"><i class="fas fa-music" style="font-size:80px;opacity:0.5;margin-bottom:20px"></i><br><audio src="' + url + '" controls style="width:300px"></audio></div>';
       } else {
-        html = '<div style="text-align:center;padding:40px;color:white"><i class="fas fa-file" style="font-size:80px;opacity:0.5;margin-bottom:20px"></i><br><a href="' + url + '" target="_blank" style="color:var(--accent);font-size:16px">打开文件</a></div>';
+        html = '<div style="text-align:center;padding:40px;color:white"><i class="fas fa-file" style="font-size:80px;opacity:0.5;margin-bottom:20px"></i><br><a href="' + url + '" target="_blank" style="color:var(--accent);font-size:16px">\u6253\u5F00\u6587\u4EF6</a></div>';
       }
       container.innerHTML = html;
       document.getElementById('previewOverlay').style.display = 'flex';
@@ -2086,66 +2144,86 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
       const adminSavedTheme = localStorage.getItem('theme');
       if (adminSavedTheme === 'dark') {
         document.documentElement.setAttribute('data-theme', 'dark');
-        document.getElementById('themeToggleAdmin').innerHTML = '<i class="fas fa-moon"></i> 深色模式';
+        document.getElementById('themeToggleAdmin').innerHTML = '<i class="fas fa-moon"></i>';
       } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches && !adminSavedTheme) {
         document.documentElement.setAttribute('data-theme', 'dark');
-        document.getElementById('themeToggleAdmin').innerHTML = '<i class="fas fa-moon"></i> 深色模式';
+        document.getElementById('themeToggleAdmin').innerHTML = '<i class="fas fa-moon"></i>';
       }
       document.getElementById('themeToggleAdmin').addEventListener('click', function() {
         const current = document.documentElement.getAttribute('data-theme');
         if (current === 'dark') {
           document.documentElement.setAttribute('data-theme', 'light');
-          this.innerHTML = '<i class="fas fa-sun"></i> 浅色模式';
+          this.innerHTML = '<i class="fas fa-sun"></i>';
           localStorage.setItem('theme', 'light');
         } else {
           document.documentElement.setAttribute('data-theme', 'dark');
-          this.innerHTML = '<i class="fas fa-moon"></i> 深色模式';
+          this.innerHTML = '<i class="fas fa-moon"></i>';
           localStorage.setItem('theme', 'dark');
         }
       });
     });
   <\/script>
   </head>
-  <body>
+    <body>
     <div class="admin-card">
-    <div class="card-header-row" style="position:relative;justify-content:center;margin-bottom:40px">
-      <h1 class="page-title" style="margin:0">Media-FishByte \u56FE\u5E8A\u7BA1\u7406</h1>
-      <div style="position:absolute;right:0;top:50%;transform:translateY(-50%);display:flex;gap:16px;align-items:center">
-        <a href="/" class="btn" id="backToHome" title="\u8FD4\u56DE\u9996\u9875"><i class="fas fa-arrow-left"></i> \u9996\u9875</a>
-        <button type="button" class="btn" id="themeToggleAdmin" title="\u5207\u6362\u4E3B\u9898"><i class="fas fa-sun"></i> \u6D45\u8272\u6A21\u5F0F</button>
+    <div style="display:flex;align-items:center;justify-content:center;margin-bottom:40px;position:relative;min-height:44px">
+      <h1 class="page-title" style="margin:0">\u56FE\u5E8A\u7BA1\u7406</h1>
+      <div style="position:absolute;right:0;display:flex;gap:16px;align-items:center">
+        <a href="/" class="btn" id="backToHome" title="\u8FD4\u56DE\u9996\u9875"><i class="fas fa-arrow-left"></i></a>
+        <button type="button" class="btn" id="themeToggleAdmin" title="\u5207\u6362\u4E3B\u9898"><i class="fas fa-sun"></i></button>
       </div>
     </div>
-    <div class="filter-tabs">
-      <a href="/admin" class="filter-tab${type === "all" ? " active" : ""}" data-count="${countAll}">\u5168\u90E8\uFF08${countAll}\uFF09</a>
-      <a href="/admin?type=image" class="filter-tab${type === "image" ? " active" : ""}" data-count="${countImage}">\u56FE\u7247\uFF08${countImage}\uFF09</a>
-      <a href="/admin?type=video" class="filter-tab${type === "video" ? " active" : ""}" data-count="${countVideo}">\u89C6\u9891\uFF08${countVideo}\uFF09</a>
-      <a href="/admin?type=audio" class="filter-tab${type === "audio" ? " active" : ""}" data-count="${countAudio}">\u97F3\u9891\uFF08${countAudio}\uFF09</a>
-      <a href="/admin?type=other" class="filter-tab${type === "other" ? " active" : ""}" data-count="${countOther}">\u5176\u4ED6\uFF08${countOther}\uFF09</a>
+    <div class="nav nav-pills filter-tabs">
+      <a href="/admin" class="nav-link${type === "all" ? " active" : ""}" data-count="${countAll}">\u5168\u90E8 <span class="badge badge-light badge-pill">${countAll}</span></a>
+      <a href="/admin?type=image" class="nav-link${type === "image" ? " active" : ""}" data-count="${countImage}">\u56FE\u7247 <span class="badge badge-light badge-pill">${countImage}</span></a>
+      <a href="/admin?type=video" class="nav-link${type === "video" ? " active" : ""}" data-count="${countVideo}">\u89C6\u9891 <span class="badge badge-light badge-pill">${countVideo}</span></a>
+      <a href="/admin?type=audio" class="nav-link${type === "audio" ? " active" : ""}" data-count="${countAudio}">\u97F3\u9891 <span class="badge badge-light badge-pill">${countAudio}</span></a>
+      <a href="/admin?type=other" class="nav-link${type === "other" ? " active" : ""}" data-count="${countOther}">\u5176\u4ED6 <span class="badge badge-light badge-pill">${countOther}</span></a>
     </div>
-    <div class="header">
-      <div class="header-left" data-total="${totalCount.count}">
+    <div class="header d-flex justify-content-between align-items-center flex-wrap">
+      <div class="d-flex align-items-center flex-grow-1 font-weight-bold" style="color:var(--text-secondary);gap:15px" data-total="${totalCount.count}">
         <span>\u5171 ${totalCount.count} \u4E2A\u6587\u4EF6</span>
-        <span class="header-divider">|</span>
+        <span class="text-muted" style="opacity:0.4">|</span>
         <span>\u5DF2\u9009\u4E2D <strong id="selected-count">0</strong> \u4E2A</span>
       </div>
-      <div class="header-actions">
+      <div class="d-flex align-items-center flex-shrink-0" style="gap:8px">
         <div id="action-buttons">
-          <button id="preview-button" class="delete-button" onclick="previewMedia()" style="display:none">\u9884\u89C8</button>
-          <button class="delete-button" onclick="copySelectedUrls()">\u590D\u5236</button>
-          <button id="delete-button" class="delete-button danger" onclick="deleteSelectedImages()">\u5220\u9664</button>
+          <button id="preview-button" class="btn btn-primary" onclick="previewMedia()" style="display:none">\u9884\u89C8</button>
+          <button class="btn btn-primary" onclick="copySelectedUrls()">\u590D\u5236</button>
+          <button id="delete-button" class="btn btn-danger" onclick="deleteSelectedImages()">\u5220\u9664</button>
         </div>
-        <button id="select-all-button" class="delete-button" onclick="selectAllImages()">\u5168\u9009</button>
+        <button id="select-all-button" class="btn btn-outline-primary" onclick="selectAllImages()">\u5168\u9009</button>
       </div>
     </div>
     <div class="gallery">
       ${mediaData.length === 0 ? '<div class="empty-state"><i class="fas fa-cloud-upload-alt"></i><div>\u6682\u65E0\u5A92\u4F53\u6587\u4EF6</div></div>' : mediaHtml}
     </div>
     ${mediaData.length > 0 && totalPages > 1 ? `
-    <div class="pagination">
-      <button onclick="goToPage(${page - 1})" ${page <= 1 ? "disabled" : ""}>\u4E0A\u4E00\u9875</button>
-      <span class="page-info" data-total="${totalCount.count}">\u7B2C ${page} / ${totalPages} \u9875\uFF08\u5171 ${totalCount.count} \u4E2A\uFF09</span>
-      <button onclick="goToPage(${page + 1})" ${page >= totalPages ? "disabled" : ""}>\u4E0B\u4E00\u9875</button>
-    </div>
+    <nav>
+      <ul class="pagination justify-content-center" style="margin:8px 0 0 0;padding:16px 0 0 0;border-top:1px solid var(--border-light);gap:8px">
+        <li class="page-item ${page <= 1 ? "disabled" : ""}">
+          <button class="page-link" onclick="goToPage(${page - 1})" ${page <= 1 ? "disabled" : ""}>\u4E0A\u4E00\u9875</button>
+        </li>
+        ${(() => {
+    const r = 2;
+    const s = Math.max(2, page - r);
+    const e = Math.min(totalPages - 1, page + r);
+    const items = [];
+    items.push('<li class="page-item ' + (page === 1 ? "active" : "") + '"><button class="page-link" onclick="goToPage(1)">1</button></li>');
+    if (s > 2) items.push('<li class="page-item disabled"><span class="page-link">&hellip;</span></li>');
+    for (let i = s; i <= e; i++) {
+      items.push('<li class="page-item ' + (page === i ? "active" : "") + '"><button class="page-link" onclick="goToPage(' + i + ')">' + i + "</button></li>");
+    }
+    if (e < totalPages - 1) items.push('<li class="page-item disabled"><span class="page-link">&hellip;</span></li>');
+    if (totalPages > 1) items.push('<li class="page-item ' + (page === totalPages ? "active" : "") + '"><button class="page-link" onclick="goToPage(' + totalPages + ')">' + totalPages + "</button></li>");
+    return items.join("");
+  })()}
+        <li class="page-item ${page >= totalPages ? "disabled" : ""}">
+          <button class="page-link" onclick="goToPage(${page + 1})" ${page >= totalPages ? "disabled" : ""}>\u4E0B\u4E00\u9875</button>
+        </li>
+      </ul>
+    </nav>
+    <div class="text-center page-info" style="color:var(--text-muted);font-size:13px;margin-top:8px">\u7B2C ${page} / ${totalPages} \u9875\uFF08\u5171 ${totalCount.count} \u4E2A\uFF09</div>
     ` : ""}
     <div id="previewOverlay" class="preview-overlay" style="display:none" onclick="closePreview(event)">
       <div class="preview-content">
@@ -2154,6 +2232,7 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
       </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"><\/script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.1/js/bootstrap.bundle.min.js" integrity="sha512-mULnawDVcCnsk9a4aG1QLZZ6rcce/jSzEGqUkeOLy0b6q0+T6syHrxlsAGH7ZVoqC93Pd0lBqd6WguPWih7VHA==" crossorigin="anonymous" referrerpolicy="no-referrer"><\/script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js" integrity="sha512-lbwH47l/tPXJYG9AcFNoJaTMhGvYWhVM9YI43CT+uteTRRaiLCui8snIgyAN8XWgNjNhCqlAUdzZptso6OCoFQ==" crossorigin="anonymous" referrerpolicy="no-referrer"><\/script>
     <script>
       toastr.options.timeOut = 3000;
@@ -2164,13 +2243,14 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
         window.location.href = url.toString();
       }
     <\/script>
-    </div>
   </body>
   </html>
   `;
   return new Response(html, { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } });
 }
 __name(generateAdminPage, "generateAdminPage");
+__name2(generateAdminPage, "generateAdminPage");
+__name22(generateAdminPage, "generateAdminPage");
 function buildTypeFilter(type) {
   if (type === "all" || !type) return "";
   let exts;
@@ -2189,6 +2269,8 @@ function buildTypeFilter(type) {
   return "";
 }
 __name(buildTypeFilter, "buildTypeFilter");
+__name2(buildTypeFilter, "buildTypeFilter");
+__name22(buildTypeFilter, "buildTypeFilter");
 async function fetchMediaData(DATABASE, limit = null, offset = 0, whereClause = "") {
   let query = "SELECT url, COALESCE(size, 0) as size FROM media " + whereClause + " ORDER BY url DESC";
   if (limit !== null) {
@@ -2198,6 +2280,8 @@ async function fetchMediaData(DATABASE, limit = null, offset = 0, whereClause = 
   return result.results.map((row) => ({ url: row.url, size: row.size }));
 }
 __name(fetchMediaData, "fetchMediaData");
+__name2(fetchMediaData, "fetchMediaData");
+__name22(fetchMediaData, "fetchMediaData");
 async function handleUploadRequest(request, config) {
   try {
     const formData = await request.formData();
@@ -2228,6 +2312,8 @@ async function handleUploadRequest(request, config) {
   }
 }
 __name(handleUploadRequest, "handleUploadRequest");
+__name2(handleUploadRequest, "handleUploadRequest");
+__name22(handleUploadRequest, "handleUploadRequest");
 async function handleImageRequest(request, config) {
   const requestedUrl = request.url;
   const cache = caches.default;
@@ -2258,6 +2344,8 @@ async function handleImageRequest(request, config) {
   return responseToCache;
 }
 __name(handleImageRequest, "handleImageRequest");
+__name2(handleImageRequest, "handleImageRequest");
+__name22(handleImageRequest, "handleImageRequest");
 async function handleDeleteImagesRequest(request, config) {
   if (!authenticate(request, config.username, config.password)) {
     return unauthorizedResponse();
@@ -2294,6 +2382,8 @@ async function handleDeleteImagesRequest(request, config) {
   }
 }
 __name(handleDeleteImagesRequest, "handleDeleteImagesRequest");
+__name2(handleDeleteImagesRequest, "handleDeleteImagesRequest");
+__name22(handleDeleteImagesRequest, "handleDeleteImagesRequest");
 export {
   index_default as default
 };
