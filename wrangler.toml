@@ -8,6 +8,9 @@ USERNAME = "paperfish233"
 PASSWORD = "qwerty8023"
 ADMIN_PATH = "admin"
 ENABLE_AUTH = "true"
+ENABLE_AUTH_ADMIN = "true"
+USERNAME_ADMIN = "paperfish233"
+PASSWORD_ADMIN = "qwerty8023"
 MAX_SIZE_MB = "20"
 
 [[r2_buckets]]

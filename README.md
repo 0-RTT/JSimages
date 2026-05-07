@@ -1,19 +1,26 @@
 ### 核心功能
 - 🔐 可选的访客验证功能（Basic Auth）
 - 📦 可选的文件大小限制（默认 10MB，可通过环境变量配置）
-- 📁 支持所有文件格式上传（图片、音频、视频等）
+- 📁 前台支持常见图片、音频、视频格式上传
 - 📤 支持多文件上传、拖拽上传和粘贴上传（Ctrl+V）
+- 🌗 暗色/亮色主题切换
+- ⚡ Cloudflare Cache API 缓存支持
+- 🎨 懒加载和骨架屏优化
 
 ### 管理功能
-- 📋 支持查看本地历史记录
-- 🖼️ 图库管理界面，支持批量操作
+- 🔐 后台独立认证，支持单独设置管理员账号密码
+- 📋 支持查看最新10条本地历史记录
+- 🖼️ 图库管理界面，支持分类筛选（图片/视频/音频/其他）
+- 👁️ 媒体预览（支持图片、视频、音频）
+- 📤 Admin 上传任意文件格式（不受前台类型限制）
 - 🗑️ 支持批量删除文件（同步删除 R2 存储和数据库记录）
-- ⏰ 显示文件上传时间
+- ⏰ 显示文件上传时间及文件大小
+- 📱 响应式设计，支持移动端
 
 ### 性能优化
 - ⚡ Cloudflare Cache API 缓存支持
 - 🎨 懒加载和骨架屏优化
-- 📱 响应式设计，支持移动端
+- 🌗 暗色/亮色主题切换
 
 ## 部署步骤
 > ⚠️虽然项目的代码使用了Worker的缓存API，但还是建议配置好**边缘 TTL** 并开启**访客验证**，防止被刷导致扣费！
@@ -24,13 +31,16 @@
 | 变量名 | 说明 | 必填 | 示例 |
 |--------|------|------|------|
 | DOMAIN | 自定义域名 | 是 | example.workers.dev |
-| USERNAME | 管理员用户名 | 是 | admin |
-| PASSWORD | 管理员密码 | 是 | password123 |
+| USERNAME | 首页用户名 | 否 | user |
+| PASSWORD | 首页密码 | 否 | password123 |
+| USERNAME_ADMIN | 管理员用户名 | 否 | admin |
+| PASSWORD_ADMIN | 管理员密码 | 否 | password123 |
 | ADMIN_PATH | 管理后台路径 | 是 | admin |
 | ENABLE_AUTH | 访客验证（设置为 true 开启，不设置或设置为 false 则关闭） | 否 | false |
+| ENABLE_AUTH_ADMIN | 管理员验证（设置为 true 开启，不设置或设置为 false 则关闭） | 否 | false |
 | MAX_SIZE_MB | 单文件最大支持大小（单位：MB，默认值为 10） | 否 | 10 |
-| DATABASE | D1 数据库绑定变量名称 | 是 | 默认DB（需要设置为此名称） |
-| R2_BUCKET | R2 存储桶名称 | 是 | 默认（需要设置为此名称） |
+| DB | D1 数据库绑定变量名称 | 是 | （需要在 Cloudflare 绑定 D1 数据库） |
+| SB | R2 存储桶绑定变量名称 | 是 | （需要在 Cloudflare 绑定 R2 存储桶） |
 
 ### 2. 创建 R2 存储桶
 1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com)
@@ -59,9 +69,9 @@ npx wrangler d1 migrations apply DB --remote
 
 ### 5. 绑定 D1 数据库和 R2 储存
 1. 在 Worker 设置页面找到 `设置` → `绑定`
-2. 点击 `添加` 添加以下变量
-   - DATABASE
-   - R2_BUCKET 
+2. 点击 `添加` 添加以下绑定
+   - **D1 数据库**：变量名称填 `DB`，选择创建的数据库
+   - **R2 存储桶**：变量名称填 `SB`，选择创建的存储桶
 3. 点击 `部署`
 
 ### 6. 绑定域名
@@ -73,19 +83,12 @@ npx wrangler d1 migrations apply DB --remote
 
 ### 7. 配置变量和机密
 1. 在 Worker 的 `设置` → `变量和机密` 中
-2. 点击 `添加` 添加以下变量
-   - DOMAIN
-   - USERNAME
-   - PASSWORD
-   - ADMIN_PATH
-   - ENABLE_AUTH（可选）
-   - MAX_SIZE_MB（可选）
+2. 点击 `添加` 添加变量表里的变量
 3. 点击 `部署`
 
 ### 8. 部署代码
-1. 进入 Worker 的编辑页面
-2. 将 `index.js` 的完整代码复制粘贴到编辑器中
-3. 点击 `部署`
+1. 在项目目录打开终端
+2. 执行 `npx wrangler deploy` 即可部署到 Cloudflare
 
 ### 9. 配置缓存
 1. 进入 Cloudflare Dashboard
@@ -94,19 +97,8 @@ npx wrangler d1 migrations apply DB --remote
 4. 设置 `边缘 TTL` → `忽略缓存控制标头，使用此 TTL` → `30天`（根据需要设置）
 5. 点击 `部署`
 
-## 核查记录（与当前代码的差异，待修正）
+## 开源协议
+MIT License
 
-### README 写了但代码没有的功能
-- **可选的图片压缩功能** — 代码无压缩逻辑，文件原样存 R2
-- **支持所有文件格式上传（图片、视频、文档等）** — 代码有白名单 `ALLOWED_EXTENSIONS`，仅支持特定图片/视频/音频格式，不支持文档
-
-### README 与实际代码不一致
-- 变量名 README 写 `DATABASE` / `R2_BUCKET`，实际 `wrangler.toml` 绑定为 **`DB`** / **`SB`**
-- 部署步骤写的是"复制粘贴代码到编辑器"，实际使用 `wrangler deploy`
-
-### 项目有但 README 未提及
-- 暗色/亮色主题切换
-- 文件大小显示
-- 类型筛选（图片/视频/音频/其他）
-- 音视频预览
-- Admin 分页 + 全选/取消全选
+## 鸣谢
+- [0-RTT/JSimages](https://github.com/0-RTT/JSimages)

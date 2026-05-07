@@ -50,6 +50,9 @@ function extractConfig(env) {
     password: env.PASSWORD,
     adminPath: env.ADMIN_PATH,
     enableAuth: env.ENABLE_AUTH === "true",
+    enableAuthAdmin: env.ENABLE_AUTH_ADMIN === "true",
+    usernameAdmin: env.USERNAME_ADMIN,
+    passwordAdmin: env.PASSWORD_ADMIN,
     r2Bucket: env.SB,
     maxSize: (env.MAX_SIZE_MB ? parseInt(env.MAX_SIZE_MB, 10) : 10) * 1024 * 1024
   };
@@ -1359,7 +1362,7 @@ __name(handleStatsRequest, "handleStatsRequest");
 __name2(handleStatsRequest, "handleStatsRequest");
 __name22(handleStatsRequest, "handleStatsRequest");
 async function handleAdminRequest(request, config) {
-  if (!authenticate(request, config.username, config.password)) {
+  if (config.enableAuthAdmin && !authenticate(request, config.usernameAdmin, config.passwordAdmin)) {
     return unauthorizedResponse();
   }
   const url = new URL(request.url);
@@ -2383,7 +2386,7 @@ __name(handleUploadRequest, "handleUploadRequest");
 __name2(handleUploadRequest, "handleUploadRequest");
 __name22(handleUploadRequest, "handleUploadRequest");
 async function handleAdminUploadRequest(request, config) {
-  if (!authenticate(request, config.username, config.password)) {
+  if (config.enableAuthAdmin && !authenticate(request, config.usernameAdmin, config.passwordAdmin)) {
     return unauthorizedResponse();
   }
   try {
@@ -2447,7 +2450,7 @@ __name(handleImageRequest, "handleImageRequest");
 __name2(handleImageRequest, "handleImageRequest");
 __name22(handleImageRequest, "handleImageRequest");
 async function handleDeleteImagesRequest(request, config) {
-  if (!authenticate(request, config.username, config.password)) {
+  if (config.enableAuthAdmin && !authenticate(request, config.usernameAdmin, config.passwordAdmin)) {
     return unauthorizedResponse();
   }
   if (request.method !== "POST") {
