@@ -14,6 +14,8 @@ var CONTENT_TYPE_MAP = {
   "webp": "image/webp",
   "bmp": "image/bmp",
   "svg": "image/svg+xml",
+  "ico": "image/x-icon",
+  "heic": "image/heic",
   "tiff": "image/tiff",
   "mp4": "video/mp4",
   "avi": "video/x-msvideo",
@@ -139,6 +141,8 @@ var index_default = {
         return request.method === "POST" ? await handleUploadRequest(request, config) : new Response("Method Not Allowed", { status: 405 });
       case "/delete-images":
         return await handleDeleteImagesRequest(request, config);
+      case "/admin-upload":
+        return request.method === "POST" ? await handleAdminUploadRequest(request, config) : new Response("Method Not Allowed", { status: 405 });
       default:
         return await handleImageRequest(request, config);
     }
@@ -318,12 +322,6 @@ t  .badge { display:inline-block; padding:2px 6px; font-size:0.75em; border-radi
       #themeToggle:hover {
           opacity: 1;
           transform: scale(1.1);
-      }
-      .uniform-height {
-          margin-top: 20px;
-      }
-      .btn-group-spacing {
-          margin-bottom: 20px !important;
       }
       #viewCacheBtn,
       #adminLink {
@@ -771,7 +769,7 @@ t  .badge { display:inline-block; padding:2px 6px; font-size:0.75em; border-radi
               <div class="upload-hint">
                   <i class="fas fa-info-circle"></i>\u652F\u6301\u6279\u91CF\u4E0A\u4F20\u3001\u62D6\u62FD\u4E0A\u4F20\u3001\u7C98\u8D34\u4E0A\u4F20
               </div>
-              <div id="fileLink-group" class="form-group mb-3 uniform-height btn-group-spacing" style="display: none;">
+              <div id="fileLink-group" class="form-group mb-3" style="display: none;">
                   <textarea class="form-control" id="fileLink" readonly></textarea>
               </div>
               <div class="upload-progress" id="uploadProgress">
@@ -784,14 +782,14 @@ t  .badge { display:inline-block; padding:2px 6px; font-size:0.75em; border-radi
               <div id="cacheContent" style="display: none;"></div>
           </form>
       </div>
-      <p class="project-link">\u9879\u76EE\u53C2\u8003\u6765\u6E90 - <a href="https://github.com/0-RTT/JSimages" target="_blank" rel="noopener noreferrer">0-RTT/JSimages</a></p>
+      <p class="project-link">\u9879\u76EE\u6838\u5FC3\u6765\u6E90 - <a href="https://github.com/0-RTT/JSimages" target="_blank" rel="noopener noreferrer">0-RTT/JSimages</a></p>
       <p class="stats-line" id="statsLine"><i class="fas fa-database"></i> \u52A0\u8F7D\u7EDF\u8BA1\u4E2D...</p>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"><\/script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-fileinput/5.2.7/js/fileinput.min.js" integrity="sha512-CCLv901EuJXf3k0OrE5qix8s2HaCDpjeBERR2wVHUwzEIc7jfiK9wqJFssyMOc1lJ/KvYKsDenzxbDTAQ4nh1w==" crossorigin="anonymous" referrerpolicy="no-referrer"><\/script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-fileinput/5.2.7/js/locales/zh.min.js" integrity="sha512-IizKWmZY3aznnbFx/Gj8ybkRyKk7wm+d7MKmEgOMRQDN1D1wmnDRupfXn6X04pwIyKFWsmFVgrcl0j6W3Z5FDQ==" crossorigin="anonymous" referrerpolicy="no-referrer"><\/script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js" integrity="sha512-lbwH47l/tPXJYG9AcFNoJaTMhGvYWhVM9YI43CT+uteTRRaiLCui8snIgyAN8XWgNjNhCqlAUdzZptso6OCoFQ==" crossorigin="anonymous" referrerpolicy="no-referrer"><\/script>
       <script>
-      const ALLOWED_EXTENSIONS = ['jpg','jpeg','png','gif','webp','bmp','svg','tiff','mp4','avi','mov','webm','wmv','flv','mkv','mp3','wav','ogg','flac','aac','m4a','wma','opus'];
+      const ALLOWED_EXTENSIONS = ['jpg','jpeg','png','gif','webp','bmp','svg','ico','heic','tiff','mp4','avi','mov','webm','wmv','flv','mkv','mp3','wav','ogg','flac','aac','m4a','wma','opus'];
       function isAllowedFile(file) {
         const ext = file.name.split('.').pop().toLowerCase();
         return ALLOWED_EXTENSIONS.includes(ext);
@@ -816,7 +814,6 @@ t  .badge { display:inline-block; padding:2px 6px; font-size:0.75em; border-radi
         let originalImageURLs = [];
         let thumbnailData = [];
         let isCacheVisible = false;
-        let resettingUnsupported = false;
         let activeXHRs = [];
         initFileInput();
         $('.btn-file').attr('title', '\u9009\u62E9\u6587\u4EF6');
@@ -896,7 +893,6 @@ t  .badge { display:inline-block; padding:2px 6px; font-size:0.75em; border-radi
           }
           if (rejectedFiles.length > 0 && allowedFiles.length === 0) {
             setTimeout(() => {
-              resettingUnsupported = true;
               $('#fileInput').fileinput('clear');
             }, 0);
             return;
@@ -1193,10 +1189,7 @@ t  .badge { display:inline-block; padding:2px 6px; font-size:0.75em; border-radi
         });
 
         function handleFileClear(event) {
-          if (resettingUnsupported) {
-            resettingUnsupported = false;
-            return;
-          }
+
           if (isCacheVisible) {
             $('#cacheContent').hide();
             isCacheVisible = false;
@@ -1259,7 +1252,7 @@ t  .badge { display:inline-block; padding:2px 6px; font-size:0.75em; border-radi
 
         function getCacheType(fileName) {
           const ext = fileName.split('.').pop().toLowerCase();
-          if (['jpg','jpeg','png','gif','webp','bmp','svg','ico'].includes(ext)) return 'image';
+          if (['jpg','jpeg','png','gif','webp','bmp','svg','ico','heic'].includes(ext)) return 'image';
           if (['mp4','mov','avi','wmv','flv','mkv','webm'].includes(ext)) return 'video';
           if (['mp3','wav','ogg','aac','flac','m4a','wma'].includes(ext)) return 'audio';
           return 'other';
@@ -1313,10 +1306,6 @@ t  .badge { display:inline-block; padding:2px 6px; font-size:0.75em; border-radi
             isCacheVisible = true;
             $('.upload-hint, .project-link, .stats-line').hide();
           }
-        });
-
-        $(document).on('click', '.cache-item', function(e) {
-          if ($(e.target).closest('.cache-copy').length) return;
         });
 
         $(document).on('click', '.cache-copy', function(e) {
@@ -1382,10 +1371,6 @@ __name(handleAdminRequest, "handleAdminRequest");
 __name2(handleAdminRequest, "handleAdminRequest");
 __name22(handleAdminRequest, "handleAdminRequest");
 async function generateAdminPage(DATABASE, page = 1, type = "all") {
-  try {
-    await DATABASE.prepare("ALTER TABLE media ADD COLUMN size INTEGER DEFAULT 0").run();
-  } catch (e) {
-  }
   const pageSize = 30;
   const offset = (page - 1) * pageSize;
   const typeFilter = buildTypeFilter(type);
@@ -1651,7 +1636,8 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
         opacity: 0.4;
       }
       #backToHome,
-      #themeToggleAdmin {
+      #themeToggleAdmin,
+      #adminUploadBtn {
         background: none;
         border: none;
         color: var(--accent);
@@ -1665,14 +1651,16 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
         text-decoration: none;
       }
       #backToHome:focus,
-      #themeToggleAdmin:focus {
+      #themeToggleAdmin:focus,
+      #adminUploadBtn:focus {
           outline: 2px solid var(--accent);
           outline-offset: 3px;
           border-radius: 4px;
           box-shadow: none !important;
       }
       #backToHome:hover,
-      #themeToggleAdmin:hover {
+      #themeToggleAdmin:hover,
+      #adminUploadBtn:hover {
         opacity: 1;
         transform: scale(1.1);
       }
@@ -1966,7 +1954,7 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
           } else {
             const url = Array.from(selectedKeys)[0];
             const ext = url.split('.').pop().toLowerCase();
-            const PREVIEW_EXTS = ['jpg','jpeg','png','gif','webp','bmp','svg','tiff','mp4','avi','mov','wmv','flv','mkv','webm','mp3','wav','ogg','flac','aac','m4a','wma','opus'];
+            const PREVIEW_EXTS = ['jpg','jpeg','png','gif','webp','bmp','svg','ico','tiff','mp4','avi','mov','wmv','flv','mkv','webm','mp3','wav','ogg','flac','aac','m4a','wma','opus'];
             if (!PREVIEW_EXTS.includes(ext)) showPreview = false;
           }
         }
@@ -2024,7 +2012,7 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
           }
 
           // \u66F4\u65B0\u7B5B\u9009\u6807\u7B7E\u6570\u91CF
-          const IMAGE_EXTS = ['jpg','jpeg','png','gif','webp','bmp','svg','tiff'];
+          const IMAGE_EXTS = ['jpg','jpeg','png','gif','webp','bmp','svg','ico','heic','tiff'];
           const VIDEO_EXTS = ['mp4','avi','mov','wmv','flv','mkv','webm'];
           const AUDIO_EXTS = ['mp3','wav','ogg','flac','aac','m4a','wma','opus'];
           const typeDec = { image: 0, video: 0, audio: 0, other: 0 };
@@ -2150,7 +2138,7 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
       const url = Array.from(selectedKeys)[0];
       const container = document.getElementById('preview-container');
       const ext = url.split('.').pop().toLowerCase();
-      const IMG = ['jpg','jpeg','png','gif','webp','bmp','svg','tiff'];
+      const IMG = ['jpg','jpeg','png','gif','webp','bmp','svg','ico','tiff'];
       const VID = ['mp4','avi','mov','wmv','flv','mkv','webm'];
       const AUD = ['mp3','wav','ogg','flac','aac','m4a','wma','opus'];
       let html;
@@ -2227,6 +2215,28 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
           localStorage.setItem('theme', 'dark');
         }
       });
+      document.getElementById('adminUploadBtn').addEventListener('click', function() {
+        document.getElementById('adminFileInput').click();
+      });
+      document.getElementById('adminFileInput').addEventListener('change', async function() {
+        const file = this.files[0];
+        if (!file) return;
+        const formData = new FormData();
+        formData.append('file', file, file.name);
+        try {
+          const res = await fetch('/admin-upload', { method: 'POST', body: formData });
+          const data = await res.json();
+          if (data.error) {
+            toastr.error(data.error);
+          } else {
+            toastr.success('上传成功');
+            setTimeout(() => location.reload(), 3000);
+          }
+        } catch(e) {
+          toastr.error('上传失败');
+        }
+        this.value = '';
+      });
     });
   <\/script>
   </head>
@@ -2236,7 +2246,9 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
       <h1 class="page-title" style="margin:0">\u56FE\u5E8A\u7BA1\u7406</h1>
       <div style="position:absolute;right:0;display:flex;gap:16px;align-items:center">
         <a href="/" class="btn" id="backToHome" title="\u8FD4\u56DE\u9996\u9875"><i class="fas fa-arrow-left"></i></a>
+        <input type="file" id="adminFileInput" style="display:none">
         <button type="button" class="btn" id="themeToggleAdmin" title="\u5207\u6362\u4E3B\u9898"><i class="fas fa-sun"></i></button>
+        <button type="button" class="btn" id="adminUploadBtn" title="\u4E0A\u4F20\u6587\u4EF6"><i class="fas fa-upload"></i></button>
       </div>
     </div>
     <div class="nav nav-pills filter-tabs">
@@ -2298,7 +2310,6 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
       </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"><\/script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.1/js/bootstrap.bundle.min.js" integrity="sha512-mULnawDVcCnsk9a4aG1QLZZ6rcce/jSzEGqUkeOLy0b6q0+T6syHrxlsAGH7ZVoqC93Pd0lBqd6WguPWih7VHA==" crossorigin="anonymous" referrerpolicy="no-referrer"><\/script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js" integrity="sha512-lbwH47l/tPXJYG9AcFNoJaTMhGvYWhVM9YI43CT+uteTRRaiLCui8snIgyAN8XWgNjNhCqlAUdzZptso6OCoFQ==" crossorigin="anonymous" referrerpolicy="no-referrer"><\/script>
     <script>
       toastr.options.timeOut = 3000;
@@ -2343,15 +2354,15 @@ async function handleUploadRequest(request, config) {
     const formData = await request.formData();
     const file = formData.get("file");
     if (!file) throw new Error("\u7F3A\u5C11\u6587\u4EF6");
+    if (config.enableAuth && !authenticate(request, config.username, config.password)) {
+      return unauthorizedResponse();
+    }
     const fileExtension = getFileExtension(file.name);
     if (!ALLOWED_EXTENSIONS.has(fileExtension)) {
       return jsonResponse({ error: `\u4E0D\u652F\u6301\u7684\u6587\u4EF6\u7C7B\u578B: .${fileExtension}` }, 400);
     }
     if (file.size > config.maxSize) {
       return jsonResponse({ error: `\u6587\u4EF6\u5927\u5C0F\u8D85\u8FC7${config.maxSize / (1024 * 1024)}MB\u9650\u5236` }, 413);
-    }
-    if (config.enableAuth && !authenticate(request, config.username, config.password)) {
-      return unauthorizedResponse();
     }
     const contentType = getContentType(fileExtension);
     const typePrefix = contentType.startsWith("image/") ? "image" : contentType.startsWith("video/") ? "video" : contentType.startsWith("audio/") ? "audio" : "other";
@@ -2371,6 +2382,38 @@ async function handleUploadRequest(request, config) {
 __name(handleUploadRequest, "handleUploadRequest");
 __name2(handleUploadRequest, "handleUploadRequest");
 __name22(handleUploadRequest, "handleUploadRequest");
+async function handleAdminUploadRequest(request, config) {
+  if (!authenticate(request, config.username, config.password)) {
+    return unauthorizedResponse();
+  }
+  try {
+    const formData = await request.formData();
+    const file = formData.get("file");
+    if (!file) throw new Error("缺少文件");
+    if (file.size > config.maxSize) {
+      return jsonResponse({ error: `文件大小超过${config.maxSize / (1024 * 1024)}MB限制` }, 413);
+    }
+    const fileExtension = getFileExtension(file.name);
+    const contentType = file.type || getContentType(fileExtension);
+    let typePrefix = "other";
+    if (contentType.startsWith("image/")) typePrefix = "image";
+    else if (contentType.startsWith("video/")) typePrefix = "video";
+    else if (contentType.startsWith("audio/")) typePrefix = "audio";
+    const r2Key = `${typePrefix}_${Date.now()}`;
+    await config.r2Bucket.put(r2Key, file.stream(), {
+      httpMetadata: { contentType }
+    });
+    const imageURL = `https://${config.domain}/${r2Key}.${fileExtension}`;
+    const now = new Date().toISOString();
+    await config.database.prepare("INSERT INTO media (url, size, type, uploaded_at) VALUES (?, ?, ?, ?) ON CONFLICT(url) DO NOTHING").bind(imageURL, file.size, typePrefix, now).run();
+    return jsonResponse({ data: imageURL });
+  } catch (error) {
+    return jsonResponse({ error: error.message }, 500);
+  }
+}
+__name(handleAdminUploadRequest, "handleAdminUploadRequest");
+__name2(handleAdminUploadRequest, "handleAdminUploadRequest");
+__name22(handleAdminUploadRequest, "handleAdminUploadRequest");
 async function handleImageRequest(request, config) {
   const requestedUrl = request.url;
   const cache = caches.default;
