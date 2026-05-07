@@ -1356,7 +1356,7 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
     } else if (SUPPORTED_VIDEO_EXTS.includes(fileExtension)) {
       gradient = "linear-gradient(135deg,#f093fb 0%,#f5576c 100%)";
       iconClass = "fas fa-play-circle";
-      mediaTag = `<video class="media-img" data-src="${escapedUrl}" muted playsinline preload="none" onloadeddata="this.parentNode.querySelector('i').style.display='none'" onerror="this.style.display='none'"></video>`;
+      mediaTag = `<video class="media-img" data-src="${escapedUrl}" muted playsinline preload="metadata" onloadeddata="this.parentNode.querySelector('i').style.display='none'" onerror="this.style.display='none'"></video>`;
     } else if (SUPPORTED_AUDIO_EXTS.includes(fileExtension)) {
       gradient = "linear-gradient(135deg,#4facfe 0%,#00f2fe 100%)";
       iconClass = "fas fa-music";
@@ -2272,7 +2272,7 @@ __name(buildTypeFilter, "buildTypeFilter");
 __name2(buildTypeFilter, "buildTypeFilter");
 __name22(buildTypeFilter, "buildTypeFilter");
 async function fetchMediaData(DATABASE, limit = null, offset = 0, whereClause = "") {
-  let query = "SELECT url, COALESCE(size, 0) as size FROM media " + whereClause + " ORDER BY url DESC";
+  let query = "SELECT url, COALESCE(size, 0) as size FROM media " + whereClause + " ORDER BY CAST(SUBSTR(url, INSTR(url, '_') + 1, INSTR(SUBSTR(url, INSTR(url, '_') + 1), '.') - 1) AS INTEGER) DESC";
   if (limit !== null) {
     query += ` LIMIT ${limit} OFFSET ${offset}`;
   }
