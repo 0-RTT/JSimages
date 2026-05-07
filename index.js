@@ -177,6 +177,7 @@ async function handleRootRequest(request, config) {
   <meta name="description" content="Media - FishByte | \u57FA\u4E8ECloudFlare\u7684\u56FE\u5E8A\u670D\u52A1">
   <meta name="keywords" content="Media - FishByte,Workers,R2\u50A8\u5B58, Cloudflare,\u56FE\u5E8A">
   <title>Media - FishByte | \u57FA\u4E8ECloudFlare\u7684\u56FE\u5E8A\u670D\u52A1</title>
+  <script>(function(){var t=localStorage.getItem('theme');if(t){document.documentElement.setAttribute('data-theme',t);return}if(window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches){document.documentElement.setAttribute('data-theme','dark')}})();</script>
   <link rel="preconnect" href="https://cdnjs.cloudflare.com">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.1/css/bootstrap.min.css" integrity="sha512-T584yQ/tdRR5QwOpfvDfVQUidzfgc2339Lc8uBDtcp/wYu80d7jwBgAxbyMh0a9YM9F8N3tdErpFI8iaGx6x5g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-fileinput/5.2.7/css/fileinput.min.css" integrity="sha512-qPjB0hQKYTx1Za9Xip5h0PXcxaR1cRbHuZHo9z+gb5IgM6ZOTtIH4QLITCxcCp/8RMXtw2Z85MIZLv6LfGTLiw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -211,6 +212,8 @@ t  .badge { display:inline-block; padding:2px 6px; font-size:0.75em; border-radi
       --scrollbar-thumb: rgba(0,0,0,0.15);
       --overlay-bg: rgba(0, 0, 0, 0.35);
       --thumbnail-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      --skeleton-base: #e8e8e8;
+      --skeleton-shine: #f5f5f5;
   }
   [data-theme="dark"] {
       --bg-gradient: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #1a1a3e);
@@ -233,6 +236,8 @@ t  .badge { display:inline-block; padding:2px 6px; font-size:0.75em; border-radi
       --scrollbar-thumb: rgba(255,255,255,0.2);
       --overlay-bg: rgba(0, 0, 0, 0.55);
       --thumbnail-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      --skeleton-base: #2a2a3e;
+      --skeleton-shine: #3a3a52;
       #fileLink.form-control {
           background-color: #2a2a45;
           color: #e0e0e0;
@@ -394,8 +399,8 @@ t  .badge { display:inline-block; padding:2px 6px; font-size:0.75em; border-radi
           border-radius: 6px;
           font-size: 16px;
       }
-      .cache-ext-video { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-      .cache-ext-audio { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+      .cache-ext-video { background: linear-gradient(135deg, #F0E8FE 0%, #e0d0fc 100%); }
+      .cache-ext-audio { background: linear-gradient(135deg, #E0F5E9 0%, #c8ecda 100%); }
 
       .cache-thumb {
           flex-shrink: 0;
@@ -644,6 +649,34 @@ t  .badge { display:inline-block; padding:2px 6px; font-size:0.75em; border-radi
       .btn-light:active {
           transform: translateY(0);
       }
+      /* Skeleton screen */
+      .skeleton-wrapper {
+          padding: 0;
+      }
+      .skeleton-block {
+          border-radius: 8px;
+          background: linear-gradient(90deg, var(--skeleton-base) 25%, var(--skeleton-shine) 50%, var(--skeleton-base) 75%);
+          background-size: 200% 100%;
+          animation: skeletonShimmer 1.5s ease-in-out infinite;
+      }
+      .skeleton-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 20px;
+      }
+      .skeleton-buttons {
+          display: flex;
+          gap: 16px;
+          align-items: center;
+      }
+      .skeleton-circle {
+          border-radius: 50%;
+      }
+      @keyframes skeletonShimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+      }
       @media (max-width: 768px) {
           .card {
               width: 95%;
@@ -708,6 +741,20 @@ t  .badge { display:inline-block; padding:2px 6px; font-size:0.75em; border-radi
 <body>
       <div id="dragOverlay"><div class="drag-hint"><i class="fas fa-cloud-upload-alt"></i><p>\u62D6\u62FD\u6587\u4EF6\u5230\u6B64\u5904\u4E0A\u4F20</p></div></div>
       <div class="card">
+      <div id="skeletonWrapper" class="skeleton-wrapper">
+        <div class="skeleton-header">
+          <div class="skeleton-block" style="height:32px;width:200px"></div>
+          <div class="skeleton-buttons">
+            <div class="skeleton-block skeleton-circle" style="width:32px;height:32px"></div>
+            <div class="skeleton-block skeleton-circle" style="width:32px;height:32px"></div>
+            <div class="skeleton-block skeleton-circle" style="width:32px;height:32px"></div>
+          </div>
+        </div>
+        <div class="skeleton-block" style="height:130px;margin-bottom:16px"></div>
+        <div class="skeleton-block" style="height:20px;width:320px;margin:0 auto 16px"></div>
+        <div class="skeleton-block" style="height:16px;width:180px;margin:0 auto"></div>
+      </div>
+      <div id="realContent" style="display:none">
       <div class="card-header-row">
         <h1 class="title" style="margin:0">Media - FishByte</h1>
         <div class="header-buttons">
@@ -753,6 +800,17 @@ t  .badge { display:inline-block; padding:2px 6px; font-size:0.75em; border-radi
 
     
       $(document).ready(function() {
+        // Apply theme before skeleton transition (avoids light flash)
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+          document.documentElement.setAttribute('data-theme', savedTheme);
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+        // Skeleton screen transition
+        $('#skeletonWrapper').fadeOut(300, function() {
+          $('#realContent').fadeIn(300);
+        });
         toastr.options.timeOut = 3000;
         toastr.options.progressBar = true;
         let originalImageURLs = [];
@@ -811,12 +869,7 @@ t  .badge { display:inline-block; padding:2px 6px; font-size:0.75em; border-radi
           localStorage.setItem('theme', theme);
           $('#themeToggle i').attr('class', theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun');
         }
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) {
-          setTheme(savedTheme);
-        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-          setTheme('dark');
-        }
+        // already applied above for skeleton
         $('#themeToggle').on('click', function() {
           const current = document.documentElement.getAttribute('data-theme');
           setTheme(current === 'dark' ? 'light' : 'dark');
@@ -891,20 +944,24 @@ t  .badge { display:inline-block; padding:2px 6px; font-size:0.75em; border-radi
 
             let thumbnailContent = '';
             if (type === 'image') {
-                thumbnailContent = '<span style="display:block;width:100%;height:100%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);position:relative;overflow:hidden">' +
-                    '<i class="fas fa-image" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.4);font-size:24px;z-index:0"></i>' +
+                thumbnailContent = '<span style="display:block;width:100%;height:100%;background:#ffffff;position:relative;overflow:hidden">' +
+                    '<i class="fas fa-image" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#5A5A5A;font-size:24px;z-index:0"></i>' +
                     '<img src="' + url + '" alt="thumbnail" loading="lazy" draggable="false" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onload="this.parentNode.querySelector(\\'i\\').style.display=\\'none\\'" onerror="this.style.display=\\'none\\'">' +
                     '</span>';
             } else if (type === 'video') {
-                thumbnailContent = '<span style="display:block;width:100%;height:100%;background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);position:relative;overflow:hidden">' +
-                    '<i class="fas fa-play-circle" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.4);font-size:24px;z-index:0"></i>' +
+                thumbnailContent = '<span style="display:block;width:100%;height:100%;background:linear-gradient(135deg,#F0E8FE 0%,#e0d0fc 100%);position:relative;overflow:hidden">' +
+                    '<i class="fas fa-play-circle" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#6B46A0;font-size:24px;z-index:0"></i>' +
                     '<video src="' + url + '" muted playsinline preload="metadata" draggable="false" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.style.display=\\'none\\'"></video>' +
                     '</span>';
             } else if (type === 'audio') {
-                thumbnailContent = '<div class="file-icon"><i class="fas fa-music"></i></div>';
+                thumbnailContent = '<span style="display:block;width:100%;height:100%;background:linear-gradient(135deg,#E0F5E9 0%,#c8ecda 100%);position:relative;overflow:hidden">' +
+                    '<i class="fas fa-music" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#2D6A4F;font-size:24px"></i>' +
+                    '</span>';
             } else {
                 const ext = fileName.split('.').pop().toUpperCase();
-                thumbnailContent = '<div class="file-icon">' + ext + '</div>';
+                thumbnailContent = '<span style="display:block;width:100%;height:100%;background:linear-gradient(135deg,#E8F0FE 0%,#d5e3fc 100%);position:relative;overflow:hidden">' +
+                    '<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#4A6FA5;font-size:20px;font-weight:600">' + ext + '</span>' +
+                    '</span>';
             }
 
             const thumbnailHtml = '<div class="thumbnail-item" data-index="' + index + '">' +
@@ -929,20 +986,24 @@ t  .badge { display:inline-block; padding:2px 6px; font-size:0.75em; border-radi
 
             let thumbnailContent = '';
             if (file.type.startsWith('image/')) {
-                thumbnailContent = '<span style="display:block;width:100%;height:100%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);position:relative;overflow:hidden">' +
-                    '<i class="fas fa-image" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.4);font-size:24px;z-index:0"></i>' +
+                thumbnailContent = '<span style="display:block;width:100%;height:100%;background:#ffffff;position:relative;overflow:hidden">' +
+                    '<i class="fas fa-image" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#5A5A5A;font-size:24px;z-index:0"></i>' +
                     '<img src="' + previewUrl + '" alt="thumbnail" draggable="false" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onload="this.parentNode.querySelector(\\'i\\').style.display=\\'none\\'" onerror="this.style.display=\\'none\\'">' +
                     '</span>';
             } else if (file.type.startsWith('video/')) {
-                thumbnailContent = '<span style="display:block;width:100%;height:100%;background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);position:relative;overflow:hidden">' +
-                    '<i class="fas fa-play-circle" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.4);font-size:24px;z-index:0"></i>' +
+                thumbnailContent = '<span style="display:block;width:100%;height:100%;background:linear-gradient(135deg,#F0E8FE 0%,#e0d0fc 100%);position:relative;overflow:hidden">' +
+                    '<i class="fas fa-play-circle" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#6B46A0;font-size:24px;z-index:0"></i>' +
                     '<video src="' + previewUrl + '" muted playsinline preload="metadata" draggable="false" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.style.display=\\'none\\'"></video>' +
                     '</span>';
             } else if (file.type.startsWith('audio/')) {
-                thumbnailContent = '<div class="file-icon"><i class="fas fa-music"></i></div>';
+                thumbnailContent = '<span style="display:block;width:100%;height:100%;background:linear-gradient(135deg,#E0F5E9 0%,#c8ecda 100%);position:relative;overflow:hidden">' +
+                    '<i class="fas fa-music" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#2D6A4F;font-size:24px"></i>' +
+                    '</span>';
             } else {
                 const ext = file.name.split('.').pop().toUpperCase();
-                thumbnailContent = '<div class="file-icon">' + ext + '</div>';
+                thumbnailContent = '<span style="display:block;width:100%;height:100%;background:linear-gradient(135deg,#E8F0FE 0%,#d5e3fc 100%);position:relative;overflow:hidden">' +
+                    '<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#4A6FA5;font-size:20px;font-weight:600">' + ext + '</span>' +
+                    '</span>';
             }
 
             const thumbnailHtml = '<div class="thumbnail-item" data-index="' + index + '">' +
@@ -1222,19 +1283,19 @@ t  .badge { display:inline-block; padding:2px 6px; font-size:0.75em; border-radi
                 const truncatedUrl = item.url.length > 50 ? item.url.substring(0, 50) + '...' : item.url;
                 let leftHtml;
                 if (type === 'image') {
-                  leftHtml = '<span class="cache-ext" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);position:relative;overflow:hidden">' +
-                    '<i class="fas fa-image"></i>' +
+                  leftHtml = '<span class="cache-ext" style="background:#ffffff;position:relative;overflow:hidden">' +
+                    '<i class="fas fa-image" style="color:#5A5A5A"></i>' +
                     '<img class="cache-thumb" src="' + item.url + '" alt="" loading="lazy" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onload="this.parentNode.querySelector(\\'i\\').style.display=\\'none\\'" onerror="this.style.display=\\'none\\'">' +
                     '</span>';
                 } else if (type === 'video') {
                   leftHtml = '<span class="cache-ext cache-ext-video" style="position:relative;overflow:hidden">' +
-                    '<i class="fas fa-play-circle"></i>' +
+                    '<i class="fas fa-play-circle" style="color:#6B46A0"></i>' +
                     '<video class="cache-thumb" src="' + item.url + '" preload="metadata" muted style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.style.display=\\'none\\'"></video>' +
                     '</span>';
                 } else if (type === 'audio') {
-                  leftHtml = '<span class="cache-ext cache-ext-audio"><i class="fas fa-music"></i></span>';
+                  leftHtml = '<span class="cache-ext cache-ext-audio"><i class="fas fa-music" style="color:#2D6A4F"></i></span>';
                 } else {
-                  leftHtml = '<span class="cache-ext" style="background:linear-gradient(135deg,#a8a8a8 0%,#c9c9c9 100%)"><i class="fas fa-file"></i></span>';
+                  leftHtml = '<span class="cache-ext" style="background:linear-gradient(135deg,#E8F0FE 0%,#d5e3fc 100%)"><i class="fas fa-file" style="color:#4A6FA5"></i></span>';
                 }
                 return '<div class="cache-item" data-url="' + item.url + '">' +
                   leftHtml +
@@ -1274,8 +1335,9 @@ t  .badge { display:inline-block; padding:2px 6px; font-size:0.75em; border-radi
         });
       });
     <\/script>
+</div>
 </body>
-</html>  
+</html>
 `, "text/html;charset=UTF-8", CACHE_CONFIG.HTML);
   await cache.put(cacheKey, response.clone());
   return response;
@@ -1348,21 +1410,25 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
     const escapedUrl = escapeHtml(url);
     const typeLabel = escapeHtml(fileExtension);
     const fileSize = size > 0 ? formatFileSize(size) : "\u2014";
-    let gradient, iconClass, mediaTag;
+    let gradient, iconColor, iconClass, mediaTag;
     if (SUPPORTED_IMAGE_EXTS.includes(fileExtension)) {
-      gradient = "linear-gradient(135deg,#667eea 0%,#764ba2 100%)";
+      gradient = "#ffffff";
+      iconColor = "#5A5A5A";
       iconClass = "fas fa-image";
       mediaTag = `<img class="media-img" data-src="${escapedUrl}" alt="" onload="this.parentNode.querySelector('i').style.display='none'" onerror="this.style.display='none'">`;
     } else if (SUPPORTED_VIDEO_EXTS.includes(fileExtension)) {
-      gradient = "linear-gradient(135deg,#f093fb 0%,#f5576c 100%)";
+      gradient = "linear-gradient(135deg,#F0E8FE 0%,#e0d0fc 100%)";
+      iconColor = "#6B46A0";
       iconClass = "fas fa-play-circle";
       mediaTag = `<video class="media-img" data-src="${escapedUrl}" muted playsinline preload="metadata" onloadeddata="this.parentNode.querySelector('i').style.display='none'" onerror="this.style.display='none'"></video>`;
     } else if (SUPPORTED_AUDIO_EXTS.includes(fileExtension)) {
-      gradient = "linear-gradient(135deg,#4facfe 0%,#00f2fe 100%)";
+      gradient = "linear-gradient(135deg,#E0F5E9 0%,#c8ecda 100%)";
+      iconColor = "#2D6A4F";
       iconClass = "fas fa-music";
       mediaTag = `<audio class="media-audio" data-src="${escapedUrl}" preload="none" controls onloadeddata="this.parentNode.querySelector('i').style.display='none'" onerror="this.style.display='none'"></audio>`;
     } else {
-      gradient = "linear-gradient(135deg,#a8a8a8 0%,#c9c9c9 100%)";
+      gradient = "linear-gradient(135deg,#E8F0FE 0%,#d5e3fc 100%)";
+      iconColor = "#4A6FA5";
       iconClass = "fas fa-file";
       mediaTag = "";
     }
@@ -1370,7 +1436,7 @@ async function generateAdminPage(DATABASE, page = 1, type = "all") {
     <div class="media-container" data-key="${escapedUrl}" onclick="toggleImageSelection(this)">
       <div class="media-checkmark"><i class="fas fa-check"></i></div>
       <div class="media-thumb" style="background:${gradient}">
-        <i class="${iconClass}" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.4);font-size:36px"></i>
+        <i class="${iconClass}" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:${iconColor};font-size:44px"></i>
         ${mediaTag}
       </div>
       <div class="media-type">${typeLabel}</div>
