@@ -19,6 +19,20 @@
 - ⏰ 显示文件上传时间
 - 📋 支持多种格式复制链接（URL、BBCode、Markdown）
 
+### 界面与交互
+- 🪟 **苹果液态玻璃（Liquid Glass）视觉风格**
+  - 卡片、按钮、下拉菜单、分页器、输入框全部使用 `backdrop-filter` 毛玻璃
+  - 多层 `inset box-shadow` 模拟玻璃边缘高光与折射
+  - 卡片支持鼠标跟随镜面高光（pointermove 实时更新 `--mx / --my`）
+  - 卡片入场动画：`cubic-bezier(0.22, 1, 0.36, 1)` 缓动
+- 🔔 **右上角玻璃 Toast 通知**
+  - 淡入淡出（opacity + translateY + scale），约 320–420ms 缓动
+  - 提示文案精简（如"上传成功"/"上传失败"/"复制成功"/"命中缓存"）
+  - 支持 `success` / `error` / `warning` / `info` 四种状态，用彩色小圆点区分
+  - 多条通知在右上角自动堆叠
+- 🪟 **玻璃确认框**：删除等危险操作使用玻璃风格弹窗替代原生 `confirm()`
+- 📱 响应式设计，移动端 Toast 自动撑满左右两侧
+
 ### 性能与安全
 - ⚡ Cloudflare Cache API 缓存支持（图片热路径不查 D1）
 - 🎬 支持 HTTP Range 请求（视频可拖动进度条）
@@ -26,15 +40,25 @@
 - 🛡️ SVG 强制下载 + 严格 CSP，避免存储型 XSS
 - 🎨 图片懒加载和骨架屏优化
 - 🌅 Bing 每日壁纸背景（自动轮播）
-- 📱 响应式设计，支持移动端
-- 🪶 首页零外部依赖（无 jQuery / Bootstrap / FontAwesome / toastr）
+- 🪶 **首页与管理页均零外部依赖**（无 jQuery / Bootstrap / FontAwesome / toastr / 任何 CDN 资源）
 
 ## 更新日志
 
-> **最近更新**: 2026-09-12
+> **最近更新**: 2026-09-13
 
 <details>
 <summary>历史更新记录</summary>
+
+### 2026-09-13
+- **UI 重构为苹果液态玻璃（Liquid Glass）风格**：卡片、按钮、下拉菜单、分页器、输入框、确认框全部毛玻璃化
+- 卡片新增鼠标跟随镜面高光效果（`pointermove` 实时更新高光位置）
+- **通知系统重构**：从固定位置提示改为右上角玻璃 Toast，淡入淡出，多通知自动堆叠
+- 通知文案精简：上传/复制/缓存命中/压缩开关等只保留简短提示（如"上传成功"/"上传失败"）
+- 管理页删除等危险操作改用玻璃风格 `glassConfirm()` 弹窗，替代原生 `confirm()`
+- 管理页操作结果改用玻璃 Toast 提示，替代原生 `alert()`
+- 兼容旧调用：`window.danmaku` 仍作为 `showToast` 的别名存在
+- 移除了此前版本中残留的弹幕通知样式（`.danmaku-layer` / `.danmaku` 等），避免与新 Toast 冲突
+- 首页与后台管理页样式独立打包，互不干扰
 
 ### 2026-09-12
 - 移除首页的 jQuery / Bootstrap / Fileinput / FontAwesome / toastr 外部依赖，改为原生实现，首屏体积从约 220 KB 降到约 12 KB
@@ -106,37 +130,3 @@
 CREATE TABLE media (
     url TEXT PRIMARY KEY
 );
-```
-
-### 部署流程
-
-1. 创建 R2 存储桶和 D1 数据库（数据库建议选择 `亚太地区` 以获得更好速度）
-2. 创建 Worker，绑定上述 R2 存储桶和 D1 数据库
-3. 配置环境变量
-4. 将 `_worker.js` 代码粘贴到 Worker 编辑器中并部署
-5. 为 Worker 绑定自定义域名
-6. （推荐）为自定义域名配置 Cache Rules，边缘 TTL 设置为 30 天或按需调整
-
-### 上传格式说明
-
-支持的扩展名（服务端白名单，非白名单文件将被拒绝）：
-
-- **图片**：`jpg` `jpeg` `png` `gif` `webp` `bmp` `svg`
-- **视频**：`mp4` `avi` `mov` `webm`
-
-> SVG 会以附件形式返回，避免在浏览器中直接执行其中的脚本。
-
-### 压缩说明
-
-- 前端压缩默认开启，可点击主页右上角按钮切换
-- 压缩仅对图片生效（GIF 除外），压缩后统一转为 JPEG
-- 压缩后文件名扩展名会自动改为 `.jpg`，保证内容、文件名和 MIME 一致
-- 如不希望压缩影响画质（如透明 PNG 会丢失透明通道），可在首页关闭压缩
-
-## 开源协议
-
-MIT License
-
-## 鸣谢
-
-- [Cloudflare](https://www.cloudflare.com/)
