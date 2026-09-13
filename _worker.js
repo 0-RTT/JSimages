@@ -20,6 +20,26 @@ const CACHE_CONFIG = {
   API: 300
 };
 
+/* =========================================================
+   CORS（用于跨域脚本上传）
+   ========================================================= */
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Max-Age': '86400'
+};
+
+function withCors(response) {
+  const headers = new Headers(response.headers);
+  for (const k in CORS_HEADERS) headers.set(k, CORS_HEADERS[k]);
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
+}
+
 function extractConfig(env) {
   return {
     domain: env.DOMAIN,
@@ -119,29 +139,41 @@ function authenticate(request, username, password) {
 export default {
   async fetch(request, env) {
     try {
+      // ⭐️ CORS 预检
+      if (request.method === 'OPTIONS') {
+        return new Response(null, { status: 204, headers: CORS_HEADERS });
+      }
+
       const urlObj = new URL(request.url);
       const pathname = urlObj.pathname.replace(/\/+$/, '') || '/';
       const config = extractConfig(env);
 
+      let response;
       switch (pathname) {
         case '/':
-          return await handleRootRequest(request, config);
+          response = await handleRootRequest(request, config);
+          break;
         case `/${config.adminPath}`:
-          return await handleAdminRequest(request, config);
+          response = await handleAdminRequest(request, config);
+          break;
         case '/upload':
-          return request.method === 'POST'
+          response = request.method === 'POST'
             ? await handleUploadRequest(request, config)
             : new Response('Method Not Allowed', { status: 405 });
+          break;
         case '/bing-images':
-          return await handleBingImagesRequest();
+          response = await handleBingImagesRequest();
+          break;
         case '/delete-images':
-          return await handleDeleteImagesRequest(request, config);
+          response = await handleDeleteImagesRequest(request, config);
+          break;
         default:
-          return await handleImageRequest(request, config);
+          response = await handleImageRequest(request, config);
       }
+      return withCors(response);
     } catch (err) {
       console.error('Unhandled error:', err && err.stack || err);
-      return jsonResponse({ error: 'Internal Server Error' }, 500);
+      return withCors(jsonResponse({ error: 'Internal Server Error' }, 500));
     }
   }
 };
@@ -2154,13 +2186,30 @@ async function fetchMediaData(DATABASE, limit = null, offset = 0) {
   return result.results.map(row => ({ url: row.url }));
 }
 
+/* =========================================================
+   上传接口 —— ⭐️ 支持两种认证方式：Header 或 Form
+   ========================================================= */
 async function handleUploadRequest(request, config) {
-  if (config.enableAuth && !authenticate(request, config.username, config.password)) {
-    return unauthorizedResponse();
+  // ⭐️ 1) 先读 formData
+  let formData;
+  try {
+    formData = await request.formData();
+  } catch (e) {
+    return jsonResponse({ error: '无效的上传请求' }, 400);
+  }
+
+  // ⭐️ 2) 认证：请求头 或 form 字段（_u / _p），任一通过即放行
+  if (config.enableAuth) {
+    const headerOK = authenticate(request, config.username, config.password);
+    const formOK =
+      formData.get('_u') === config.username &&
+      formData.get('_p') === config.password;
+    if (!headerOK && !formOK) {
+      return unauthorizedResponse();
+    }
   }
 
   try {
-    const formData = await request.formData();
     const file = formData.get('file');
     if (!file || typeof file === 'string') throw new Error('缺少文件');
 
