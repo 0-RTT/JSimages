@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         R2 图床快捷上传
 // @namespace    https://github.com/0-RTT/JSimages
-// @version      2.1.0
-// @description  单击上传、长按设置、拖动吸附边缘，凭据走 formData 兼容 Via
+// @version      2.3.0
+// @description  单击上传、长按设置、拖动吸附、图片压缩、本地缓存去重
 // @author       You
 // @match        https://www.nodeseek.com/*
 // @match        https://nodeseek.com/*
@@ -47,6 +47,10 @@
   const STORE_KEY = 'r2_upload_cfg_v2';
   const HISTORY_KEY = 'r2_upload_history_v1';
   const POS_KEY = 'r2_upload_pos_v1';
+  const CACHE_KEY = 'r2_upload_cache_v1';
+
+  const CACHE_MAX = 100;                 // 缓存上限
+  const HASH_CHUNK_SIZE = 1024 * 1024;   // 取文件前 1MB 做哈希（与首页一致）
 
   function hasGM() {
     return typeof GM_getValue === 'function' && typeof GM_setValue === 'function';
@@ -87,6 +91,36 @@
 
   function readPos() { return storageGet(POS_KEY, null); }
   function writePos(pos) { storageSet(POS_KEY, pos); }
+
+  /* ---------- 上传结果缓存 ---------- */
+  // 存储格式：[{ h: hash, u: url, n: name, t: timestamp }, ...]
+  function readCache() { return storageGet(CACHE_KEY, []); }
+  function writeCache(list) { storageSet(CACHE_KEY, list); }
+
+  function getCacheEntry(hash) {
+    const list = readCache();
+    for (let i = 0; i < list.length; i++) {
+      if (list[i] && list[i].h === hash) return list[i];
+    }
+    return null;
+  }
+
+  function setCacheEntry(hash, url, name) {
+    const list = readCache();
+    // 去掉旧的同 hash
+    for (let i = list.length - 1; i >= 0; i--) {
+      if (list[i] && list[i].h === hash) list.splice(i, 1);
+    }
+    list.unshift({ h: hash, u: url, n: name || '', t: Date.now() });
+    if (list.length > CACHE_MAX) list.length = CACHE_MAX;
+    writeCache(list);
+  }
+
+  function cacheCount() { return readCache().length; }
+
+  function clearCache() {
+    writeCache([]);
+  }
 
   /* =========================================================
      剪贴板
@@ -202,7 +236,6 @@
      ========================================================= */
   const STYLE_ID = 'r2-upload-styles';
   const CSS = `
-  /* ============ 右下角按钮组 ============ */
   .r2-fab-wrap {
     position: fixed;
     right: calc(20px + env(safe-area-inset-right, 0px));
@@ -220,13 +253,11 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
     font-size: 14px;
   }
-  /* 拖动时禁用过渡，保证跟手 */
   .r2-fab-wrap.r2-fab-wrap--dragging {
     transition: none;
     z-index: 2147483100;
   }
 
-  /* 悬浮按钮 */
   .r2-fab {
     width: 52px;
     height: 52px;
@@ -261,12 +292,10 @@
   .r2-fab:active { transform: scale(.94); }
   .r2-fab svg { width: 24px; height: 24px; display: block; pointer-events: none; }
 
-  /* 上传中 */
   .r2-fab.r2-fab--busy { pointer-events: none; color: #6366f1; }
   .r2-fab.r2-fab--busy svg { animation: r2Spin 1.2s linear infinite; }
   @keyframes r2Spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
 
-  /* 首次未配置呼吸 */
   .r2-fab.r2-fab--attention { animation: r2Attention 2.4s ease-in-out infinite; }
   @keyframes r2Attention {
     0%, 100% {
@@ -281,7 +310,6 @@
     }
   }
 
-  /* 导入按钮 —— 绝对定位在 fab 旁边 */
   .r2-import-btn {
     position: absolute;
     top: 50%;
@@ -331,7 +359,6 @@
     color: #4f46e5;
   }
 
-  /* 吸附方向决定导入按钮的位置 */
   .r2-fab-wrap--dock-left .r2-import-btn {
     left: calc(100% + 12px);
     right: auto;
@@ -341,7 +368,6 @@
     left: auto;
   }
 
-  /* ============ 设置面板 ============ */
   .r2-panel {
     position: fixed;
     right: calc(20px + env(safe-area-inset-right, 0px));
@@ -441,34 +467,20 @@
   }
   .r2-btn--primary:hover { color: #fff; }
 
-  /* ============ 进度条 ============ */
-  .r2-progress {
-    position: fixed;
-    right: calc(20px + env(safe-area-inset-right, 0px));
-    bottom: calc(152px + env(safe-area-inset-bottom, 0px));
-    width: 200px;
-    height: 6px;
-    border-radius: 999px;
-    overflow: hidden;
-    background: rgba(255,255,255,.55);
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,.6), 0 10px 24px -14px rgba(15,23,42,.5);
-    backdrop-filter: blur(12px) saturate(160%);
-    -webkit-backdrop-filter: blur(12px) saturate(160%);
-    opacity: 0;
-    transition: opacity .25s ease;
-    z-index: 2147483001;
-    pointer-events: none;
+  .r2-cache-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11.5px;
+    color: #64748b;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: linear-gradient(140deg, rgba(255,255,255,.6), rgba(255,255,255,.3));
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.6);
+    margin-top: 4px;
   }
-  .r2-progress.show { opacity: 1; }
-  .r2-progress__bar {
-    height: 100%;
-    width: 0%;
-    border-radius: inherit;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    transition: width .18s ease;
-  }
+  .r2-cache-info strong { color: #4338ca; font-weight: 700; }
 
-  /* ============ Toast ============ */
   .r2-toast-stack {
     position: fixed;
     top: calc(22px + env(safe-area-inset-top, 0px));
@@ -517,7 +529,6 @@
   .r2-toast--warning { color: #92400e; }
   .r2-toast--warning .r2-toast__dot { background: #f59e0b; box-shadow: 0 0 9px 1px rgba(245,158,11,.9); }
 
-  /* ============ 移动端适配 ============ */
   @media (max-width: 560px) {
     .r2-fab { width: 50px; height: 50px; }
     .r2-fab svg { width: 22px; height: 22px; }
@@ -537,11 +548,6 @@
       max-height: calc(100vh - 220px);
       padding: 14px;
       border-radius: 20px;
-    }
-    .r2-progress {
-      right: calc(14px + env(safe-area-inset-right, 0px));
-      bottom: calc(140px + env(safe-area-inset-bottom, 0px));
-      width: 160px;
     }
     .r2-toast-stack {
       top: calc(14px + env(safe-area-inset-top, 0px));
@@ -603,6 +609,58 @@
   }
 
   /* =========================================================
+     文件哈希（与首页规则一致）
+     - 取文件前 1MB（小文件取全部）计算 SHA-256
+     - 拼接 file.size 和 file.lastModified，保证同内容不同文件不会误判
+     ========================================================= */
+  async function calculateFileHash(file) {
+    const chunk = file.size > HASH_CHUNK_SIZE ? file.slice(0, HASH_CHUNK_SIZE) : file;
+    const buf = await chunk.arrayBuffer();
+    const hashBuf = await crypto.subtle.digest('SHA-256', buf);
+    const arr = Array.from(new Uint8Array(hashBuf));
+    const hex = arr.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hex + '-' + file.size + '-' + file.lastModified;
+  }
+
+  /* =========================================================
+     图片压缩（与首页一致）
+     ========================================================= */
+  const COMPRESS_QUALITY = 0.75;
+  const COMPRESSIBLE_MIME_PREFIX = 'image/';
+  const COMPRESS_SKIP_MIME = 'image/gif';
+
+  function shouldCompress(file) {
+    if (!file || !file.type) return false;
+    if (file.type.indexOf(COMPRESSIBLE_MIME_PREFIX) !== 0) return false;
+    if (file.type === COMPRESS_SKIP_MIME) return false;
+    return true;
+  }
+
+  function compressImage(file, quality) {
+    quality = quality === undefined ? COMPRESS_QUALITY : quality;
+    return new Promise(function (resolve, reject) {
+      var image = new Image();
+      image.onload = function () {
+        var canvas = document.createElement('canvas');
+        var ctx = canvas.getContext('2d');
+        canvas.width = image.width;
+        canvas.height = image.height;
+        ctx.drawImage(image, 0, 0, image.width, image.height);
+        canvas.toBlob(function (blob) {
+          if (!blob) return reject(new Error('压缩失败'));
+          var baseName = (file.name || 'image').replace(/\.[^.]+$/, '') || 'image';
+          resolve(new File([blob], baseName + '.jpg', { type: 'image/jpeg' }));
+        }, 'image/jpeg', quality);
+      };
+      image.onerror = function () { reject(new Error('图片解码失败')); };
+      var reader = new FileReader();
+      reader.onload = function (e) { image.src = e.target.result; };
+      reader.onerror = function () { reject(new Error('文件读取失败')); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /* =========================================================
      上传
      ========================================================= */
   const ALLOWED_EXT = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'mp4', 'avi', 'mov', 'webm'];
@@ -629,7 +687,7 @@
     return { ok: false, msg: (data && (data.error || data.message)) || ('HTTP ' + status) };
   }
 
-  function uploadFile(file, onProgress) {
+  function uploadFile(file) {
     return new Promise((resolve, reject) => {
       const cfg = readCfg();
       if (!cfg || !cfg.apiUrl) return reject(new Error('请先配置图床信息'));
@@ -650,10 +708,7 @@
               else reject(new Error(parsed.msg));
             },
             onerror: () => doXHR(),
-            ontimeout: () => reject(new Error('上传超时')),
-            onprogress: (e) => {
-              if (onProgress && e.lengthComputable) onProgress(e.loaded / e.total);
-            }
+            ontimeout: () => reject(new Error('上传超时'))
           });
           return;
         } catch (e) {}
@@ -664,10 +719,6 @@
       function doXHR() {
         const xhr = new XMLHttpRequest();
         xhr.open('POST', url);
-        // 不设置任何自定义头（简单请求，不触发预检）
-        xhr.upload.onprogress = (e) => {
-          if (onProgress && e.lengthComputable) onProgress(e.loaded / e.total);
-        };
         xhr.onload = () => {
           const parsed = parseResponse(xhr.responseText, xhr.status);
           if (parsed.ok) resolve(parsed.url);
@@ -735,11 +786,9 @@
     if (dock === 'left') left = SNAP_MARGIN;
     else left = viewW - w - SNAP_MARGIN;
 
-    // 禁用过渡，避免初始化时闪烁
     const prevTransition = wrap.style.transition;
     wrap.style.transition = 'none';
     setPos(wrap, left, top);
-    // 下一帧恢复
     requestAnimationFrame(() => {
       wrap.style.transition = prevTransition || '';
     });
@@ -748,7 +797,6 @@
   function snapToEdge(wrap) {
     const rect = wrap.getBoundingClientRect();
     const viewW = window.innerWidth;
-    const viewH = window.innerHeight;
     const w = rect.width;
     const h = rect.height;
 
@@ -767,7 +815,7 @@
   }
 
   /* =========================================================
-     拖动 + 单击 + 长按 绑定
+     拖动 + 单击 + 长按
      ========================================================= */
   function bindDragAndPress(wrap, fab, opts) {
     const {
@@ -825,7 +873,6 @@
       if (!dragging && !longFired) {
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist > dragThreshold) {
-          // 进入拖动模式
           dragging = true;
           clearLong();
           wrap.classList.add('r2-fab-wrap--dragging');
@@ -858,7 +905,6 @@
       if (wasDragging) {
         dragging = false;
         wrap.classList.remove('r2-fab-wrap--dragging');
-        // 下一帧再吸附，让 transition 恢复后触发动画
         requestAnimationFrame(() => {
           if (onDragEnd) onDragEnd();
         });
@@ -892,7 +938,6 @@
   function buildUI() {
     injectStyles();
 
-    /* ---------- 隐藏的 file input ---------- */
     const hiddenInput = document.createElement('input');
     hiddenInput.type = 'file';
     hiddenInput.multiple = true;
@@ -902,15 +947,6 @@
     hiddenInput.setAttribute('tabindex', '-1');
     document.body.appendChild(hiddenInput);
 
-    /* ---------- 进度条 ---------- */
-    const progress = document.createElement('div');
-    progress.className = 'r2-progress';
-    const progressBar = document.createElement('div');
-    progressBar.className = 'r2-progress__bar';
-    progress.appendChild(progressBar);
-    document.body.appendChild(progress);
-
-    /* ---------- 设置面板 ---------- */
     const panel = document.createElement('div');
     panel.className = 'r2-panel';
     panel.innerHTML = `
@@ -947,14 +983,21 @@
           <button type="button" class="r2-btn r2-btn--primary" data-act="save" style="flex:1">保存</button>
           <button type="button" class="r2-btn" data-act="clearHistory" style="flex:1">清空记录</button>
         </div>
+
+        <div class="r2-cache-info">
+          <span>已缓存 <strong data-cache-count>0</strong> 个文件</span>
+          <button type="button" class="r2-btn" data-act="clearCache"
+                  style="padding:5px 10px;font-size:11.5px;border-radius:9px;">清空缓存</button>
+        </div>
+
         <div style="font-size:11.5px;color:#64748b;text-align:center;margin-top:6px;line-height:1.5">
-          单击上传 · 长按设置 · 拖动按钮可吸附到屏幕边缘
+          单击上传 · 长按设置 · 拖动按钮可吸附到边缘<br>
+          图片默认压缩为 JPEG（GIF 除外）· 相同文件自动命中缓存
         </div>
       </div>
     `;
     document.body.appendChild(panel);
 
-    /* ---------- 悬浮按钮组 ---------- */
     const wrap = document.createElement('div');
     wrap.className = 'r2-fab-wrap';
     fabWrapRef = wrap;
@@ -993,23 +1036,17 @@
     wrap.appendChild(fab);
     document.body.appendChild(wrap);
 
-    // 初始化位置（读存储 / 默认右下）
     initPosition(wrap);
 
-    // 窗口大小改变时重新 clamp
     let resizeTimer = null;
     window.addEventListener('resize', () => {
       if (resizeTimer) clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
         const rect = wrap.getBoundingClientRect();
         const viewW = window.innerWidth;
-        const viewH = window.innerHeight;
         const w = rect.width, h = rect.height;
-
-        // 判断当前吸附方向
         const centerX = rect.left + w / 2;
         const dock = centerX < viewW / 2 ? 'left' : 'right';
-
         let left = dock === 'left' ? SNAP_MARGIN : viewW - w - SNAP_MARGIN;
         let top = clampTop(rect.top, h);
         applyDock(wrap, dock);
@@ -1018,10 +1055,14 @@
       }, 150);
     });
 
-    /* ---------- 辅助 ---------- */
     const $ = (sel, root) => (root || panel).querySelector(sel);
     const panelOpen = () => panel.classList.contains('show');
     const importLabel = importBtn.querySelector('[data-import-label]');
+    const cacheCountEl = panel.querySelector('[data-cache-count]');
+
+    function refreshCacheCount() {
+      if (cacheCountEl) cacheCountEl.textContent = String(cacheCount());
+    }
 
     function showSettings() {
       const cfg = readCfg() || {};
@@ -1032,6 +1073,7 @@
       setVal('apiUrl', cfg.apiUrl);
       setVal('username', cfg.username);
       setVal('password', cfg.password);
+      refreshCacheCount();
       if (!panelOpen()) panel.classList.add('show');
     }
 
@@ -1039,7 +1081,6 @@
       panel.classList.remove('show');
     }
 
-    /* ---------- 焦点追踪 ---------- */
     document.addEventListener('focusin', (e) => {
       const el = e.target;
       if (!el) return;
@@ -1048,14 +1089,12 @@
       if (isEditable(el)) lastFocusedEditable = el;
     }, true);
 
-    /* ---------- 触发文件选择 ---------- */
     function triggerFilePicker() {
       pendingUrls.length = 0;
       try { hiddenInput.value = ''; } catch {}
       try { hiddenInput.click(); } catch {}
     }
 
-    /* ---------- 绑定拖动 + 短按 + 长按 ---------- */
     bindDragAndPress(wrap, fab, {
       longDelay: 600,
       dragThreshold: 8,
@@ -1077,7 +1116,6 @@
       }
     });
 
-    /* ---------- 外部点击关闭面板 ---------- */
     document.addEventListener('click', (e) => {
       if (!panelOpen()) return;
       if (panel.contains(e.target)) return;
@@ -1089,7 +1127,6 @@
       if (e.key === 'Escape' && panelOpen()) closePanel();
     });
 
-    /* ---------- 面板按钮 ---------- */
     panel.querySelectorAll('[data-act]').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -1100,6 +1137,10 @@
         else if (act === 'clearHistory') {
           writeHistory([]);
           toast('已清空记录', 'success');
+        } else if (act === 'clearCache') {
+          clearCache();
+          refreshCacheCount();
+          toast('已清空缓存', 'success');
         }
       });
     });
@@ -1118,14 +1159,12 @@
       closePanel();
     }
 
-    /* ---------- 文件选择回调 ---------- */
     hiddenInput.addEventListener('change', () => {
       const files = Array.from(hiddenInput.files || []);
       hiddenInput.value = '';
       if (files.length > 0) handleFiles(files);
     });
 
-    /* ---------- 上传流程 ---------- */
     const pendingUrls = [];
 
     function showImportBtn() {
@@ -1158,12 +1197,7 @@
       }
     });
 
-    /* ---------- 进度条 ---------- */
-    function showProgress() { progress.classList.add('show'); progressBar.style.width = '0%'; }
-    function hideProgress() { progress.classList.remove('show'); progressBar.style.width = '0%'; }
-    function setProgress(p) { progressBar.style.width = Math.max(0, Math.min(1, p)) * 100 + '%'; }
-
-    /* ---------- 处理文件 ---------- */
+    /* ---------- 处理文件（含缓存 + 压缩）---------- */
     async function handleFiles(files) {
       if (!hasValidCfg()) {
         toast('请先配置图床信息', 'warning');
@@ -1181,29 +1215,58 @@
       });
       if (queue.length === 0) return;
 
-      let processed = 0, failed = 0;
+      let processed = 0;
+      let succeeded = 0;
+      let fromCache = 0;
+      let failed = 0;
       const total = queue.length;
 
+      // 按钮进入转圈
       fab.classList.add('r2-fab--busy');
-      showProgress();
 
       const CONCURRENCY = 2;
       const workers = Array.from({ length: Math.min(CONCURRENCY, total) }, async () => {
         while (queue.length) {
-          const file = queue.shift();
+          const originalFile = queue.shift();
           try {
-            const url = await uploadFile(file, (p) => {
-              setProgress((processed / total) + p / total);
-            });
+            // 1) 计算原始文件的哈希
+            const hash = await calculateFileHash(originalFile);
+
+            // 2) 查缓存
+            const cached = getCacheEntry(hash);
+            if (cached && cached.u) {
+              processed++;
+              fromCache++;
+              succeeded++;
+              pendingUrls.push(cached.u);
+              pushHistory(cached.u);
+              continue;
+            }
+
+            // 3) 未命中：压缩（如果需要）
+            let toUpload = originalFile;
+            if (shouldCompress(originalFile)) {
+              try {
+                toUpload = await compressImage(originalFile);
+              } catch (e) {
+                console.warn('[R2] 压缩失败，使用原图:', e);
+                toUpload = originalFile;
+              }
+            }
+
+            // 4) 上传
+            const url = await uploadFile(toUpload);
+
+            // 5) 写入缓存 + 历史 + 待导入列表
+            setCacheEntry(hash, url, originalFile.name);
             processed++;
-            setProgress(processed / total);
+            succeeded++;
             pendingUrls.push(url);
             pushHistory(url);
           } catch (err) {
             processed++;
             failed++;
-            setProgress(processed / total);
-            console.error('[R2] 上传失败:', file.name, err);
+            console.error('[R2] 上传失败:', originalFile.name, err);
             toast('上传失败：' + ((err && err.message) || '未知错误'), 'error');
           }
         }
@@ -1212,12 +1275,22 @@
       await Promise.all(workers);
 
       fab.classList.remove('r2-fab--busy');
-      setTimeout(hideProgress, 500);
 
-      if (pendingUrls.length > 0) {
-        const okCount = pendingUrls.length;
-        toast(okCount > 1 ? ('上传成功 ' + okCount + ' 个') : '上传成功', 'success');
+      // 汇总提示
+      if (succeeded > 0) {
+        let msg;
+        if (fromCache === succeeded && succeeded > 0) {
+          msg = fromCache > 1 ? ('命中缓存 ' + fromCache + ' 个') : '命中缓存';
+        } else if (fromCache > 0) {
+          msg = '成功 ' + succeeded + ' 个（缓存 ' + fromCache + ' 个）';
+        } else {
+          msg = succeeded > 1 ? ('上传成功 ' + succeeded + ' 个') : '上传成功';
+        }
+        toast(msg, 'success');
         showImportBtn();
+      }
+      if (failed > 0 && succeeded === 0) {
+        // 全失败时已逐条弹出错误，这里不重复提示
       }
     }
   }
