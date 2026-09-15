@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         R2 图床快捷上传
 // @namespace    https://github.com/0-RTT/JSimages
-// @version      2.4.2
-// @description  单击上传、长按设置、拖动换位（左右吸附 + 桌面端鼠标修复，无进度条）
+// @version      2.6.1
+// @description  单击上传、长按设置、拖动换位（左右吸附 + 桌面端鼠标修复，压缩 + 缓存）
 // @author       You
 // @match        https://www.nodeseek.com/*
 // @match        https://nodeseek.com/*
@@ -26,6 +26,7 @@
      ========================================================= */
   const HOST = location.hostname;
   const IMAGE_EXT = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'];
+  const COMPRESSIBLE_EXT = ['jpg', 'jpeg', 'png', 'webp', 'bmp'];
 
   function fileExt(name) {
     const i = String(name || '').lastIndexOf('.');
@@ -45,18 +46,29 @@
      存储
      ========================================================= */
   const STORE_KEY = 'r2_upload_cfg_v2';
-  const HISTORY_KEY = 'r2_upload_history_v1';
+  const HISTORY_KEY = 'r2_upload_history_v2';
   const POS_KEY = 'r2_fab_pos_v2';
+
+  const DEFAULT_CFG = {
+    apiUrl: '',
+    username: '',
+    password: '',
+    compress: true,
+    compressQuality: 0.75
+  };
 
   function hasGM() {
     return typeof GM_getValue === 'function' && typeof GM_setValue === 'function';
   }
 
   function readCfg() {
+    let cfg = null;
     try {
-      if (hasGM()) return GM_getValue(STORE_KEY, null);
-      return JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
-    } catch { return null; }
+      if (hasGM()) cfg = GM_getValue(STORE_KEY, null);
+      else cfg = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+    } catch { cfg = null; }
+    if (!cfg || typeof cfg !== 'object') return Object.assign({}, DEFAULT_CFG);
+    return Object.assign({}, DEFAULT_CFG, cfg);
   }
   function writeCfg(cfg) {
     try {
@@ -68,10 +80,19 @@
     const c = readCfg();
     return !!(c && c.apiUrl);
   }
+
   function readHistory() {
     try {
-      if (hasGM()) return GM_getValue(HISTORY_KEY, []);
-      return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+      let raw;
+      if (hasGM()) raw = GM_getValue(HISTORY_KEY, []);
+      else raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+      if (!Array.isArray(raw)) return [];
+      return raw.map((item) => {
+        if (typeof item === 'string') {
+          return { url: item, hash: '', name: '', size: 0, ts: 0 };
+        }
+        return item;
+      }).filter((item) => item && typeof item.url === 'string');
     } catch { return []; }
   }
   function writeHistory(list) {
@@ -80,14 +101,23 @@
       else localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
     } catch {}
   }
-  function pushHistory(url) {
+  function pushHistory(entry) {
     const list = readHistory();
-    const idx = list.indexOf(url);
+    const idx = list.findIndex((x) => {
+      if (entry.hash && x.hash) return x.hash === entry.hash;
+      return x.url === entry.url;
+    });
     if (idx !== -1) list.splice(idx, 1);
-    list.unshift(url);
-    if (list.length > 12) list.length = 12;
+    list.unshift(entry);
+    if (list.length > 30) list.length = 30;
     writeHistory(list);
   }
+  function lookupHistory(hash) {
+    if (!hash) return null;
+    const list = readHistory();
+    return list.find((x) => x.hash && x.hash === hash) || null;
+  }
+
   function readPos() {
     try {
       if (hasGM()) return GM_getValue(POS_KEY, null);
@@ -99,6 +129,88 @@
       if (hasGM()) GM_setValue(POS_KEY, pos);
       else localStorage.setItem(POS_KEY, JSON.stringify(pos));
     } catch {}
+  }
+
+  /* =========================================================
+     压缩
+     ========================================================= */
+  function shouldCompressFile(file, cfg) {
+    if (!cfg || !cfg.compress) return false;
+    if (!file || !file.type) return false;
+    if (file.type.indexOf('image/') !== 0) return false;
+    if (file.type === 'image/gif') return false;
+    if (file.type === 'image/svg+xml') return false;
+    const ext = fileExt(file.name);
+    if (ext && COMPRESSIBLE_EXT.indexOf(ext) === -1) return false;
+    return true;
+  }
+
+  function compressImage(file, quality) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = function () {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = image.naturalWidth || image.width;
+          canvas.height = image.naturalHeight || image.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob(function (blob) {
+            if (!blob) return reject(new Error('压缩失败'));
+            const baseName = file.name.replace(/\.[^.]+$/, '') || 'image';
+            resolve(new File([blob], baseName + '.jpg', { type: 'image/jpeg' }));
+          }, 'image/jpeg', quality);
+        } catch (e) { reject(e); }
+      };
+      image.onerror = function () { reject(new Error('图片解码失败')); };
+      const reader = new FileReader();
+      reader.onload = function (e) { image.src = e.target.result; };
+      reader.onerror = function () { reject(new Error('文件读取失败')); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function maybeCompress(file, cfg) {
+    if (!shouldCompressFile(file, cfg)) return { file, compressed: false };
+    try {
+      const out = await compressImage(file, cfg.compressQuality || 0.75);
+      if (out.size >= file.size) return { file, compressed: false };
+      return { file: out, compressed: true };
+    } catch (e) {
+      console.warn('[R2] 压缩失败，使用原图:', e);
+      return { file, compressed: false };
+    }
+  }
+
+  /* =========================================================
+     文件指纹（SHA-256）
+     ⭐️ 2.6.1：hash 始终基于「原文件」计算
+     ========================================================= */
+  async function fileHash(file) {
+    if (!file || !file.size) return '';
+    try {
+      if (!(window.crypto && window.crypto.subtle && window.crypto.subtle.digest)) return '';
+      const buf = await file.arrayBuffer();
+      const head = new TextEncoder().encode(file.name + '|' + file.size + '|');
+      const combined = new Uint8Array(head.length + buf.byteLength);
+      combined.set(head, 0);
+      combined.set(new Uint8Array(buf), head.length);
+      const digest = await window.crypto.subtle.digest('SHA-256', combined);
+      const bytes = new Uint8Array(digest);
+      let hex = '';
+      for (let i = 0; i < bytes.length; i++) {
+        hex += bytes[i].toString(16).padStart(2, '0');
+      }
+      return hex;
+    } catch (e) {
+      console.warn('[R2] 计算文件指纹失败:', e);
+      return '';
+    }
+  }
+
+  function shouldCacheFile(file) {
+    const ext = fileExt(file.name);
+    return IMAGE_EXT.indexOf(ext) !== -1;
   }
 
   /* =========================================================
@@ -246,15 +358,9 @@
     50%{box-shadow:0 14px 34px -8px rgba(99,102,241,.7),inset 0 1px 0 rgba(255,255,255,.95),
       inset 0 0 0 2px rgba(129,140,248,.7);}
   }
-  .r2-fab-wrap.r2-fab-wrap--dragging .r2-fab:hover{
-    box-shadow:0 18px 42px -12px rgba(99,102,241,.8),
-      inset 0 1px 0 rgba(255,255,255,.95),
-      inset 0 0 0 2px rgba(129,140,248,.7);
-  }
 
   .r2-import-btn{
-    position:absolute;
-    top:50%;
+    position:absolute;top:50%;
     display:inline-flex;align-items:center;gap:7px;
     height:44px;padding:0 18px 0 16px;border-radius:22px;border:none;cursor:pointer;
     font-size:13.5px;font-weight:700;font-family:inherit;letter-spacing:.2px;color:#4338ca;
@@ -330,6 +436,64 @@
     font-size:14px;font-family:inherit;color:#1e293b;outline:none;
     transition:border-color .2s,box-shadow .2s;box-sizing:border-box;-webkit-appearance:none;}
   .r2-input:focus{border-color:#818cf8;box-shadow:0 0 0 3px rgba(129,140,248,.25);}
+
+  .r2-switch-row{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 12px;border-radius:12px;
+    border:1px solid rgba(255,255,255,.72);background:rgba(255,255,255,.5);
+    gap:10px;
+  }
+  .r2-switch-row .r2-switch-label{
+    display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;
+  }
+  .r2-switch-row .r2-switch-title{font-size:13px;font-weight:700;color:#334155;}
+  .r2-switch-row .r2-switch-sub{font-size:11.5px;color:#64748b;line-height:1.4;}
+  .r2-switch{
+    position:relative;flex:0 0 auto;
+    width:44px;height:26px;border-radius:999px;cursor:pointer;
+    background:rgba(148,163,184,.5);
+    box-shadow:inset 0 0 0 1px rgba(15,23,42,.08);
+    transition:background .25s ease;
+    -webkit-tap-highlight-color:transparent;
+    -webkit-user-select:none;user-select:none;
+  }
+  .r2-switch::after{
+    content:'';position:absolute;top:3px;left:3px;
+    width:20px;height:20px;border-radius:50%;
+    background:#ffffff;
+    box-shadow:0 2px 6px rgba(15,23,42,.3);
+    transition:transform .25s cubic-bezier(.22,1,.36,1);
+  }
+  .r2-switch.on{background:linear-gradient(135deg,#6366f1,#8b5cf6);}
+  .r2-switch.on::after{transform:translateX(18px);}
+
+  .r2-quality{
+    display:flex;align-items:center;gap:6px;
+    padding:8px 12px;border-radius:12px;
+    border:1px solid rgba(255,255,255,.72);background:rgba(255,255,255,.5);
+    opacity:0.45;pointer-events:none;transition:opacity .2s ease;
+  }
+  .r2-quality.enabled{opacity:1;pointer-events:auto;}
+  .r2-quality-label{
+    font-size:12px;font-weight:700;color:#475569;flex:0 0 auto;margin-right:2px;
+  }
+  .r2-quality-seg{
+    flex:1;display:flex;gap:4px;
+  }
+  .r2-quality-seg button{
+    flex:1;padding:6px 0;border:none;border-radius:8px;
+    font-size:12px;font-weight:600;font-family:inherit;
+    color:#475569;background:rgba(255,255,255,.7);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.7);
+    cursor:pointer;transition:all .18s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .r2-quality-seg button.active{
+    color:#ffffff;
+    background:linear-gradient(135deg,#6366f1,#8b5cf6);
+    box-shadow:0 4px 10px -4px rgba(99,102,241,.8);
+  }
+
   .r2-actions-row{display:flex;gap:8px;margin-top:6px;}
   .r2-btn{display:inline-flex;align-items:center;justify-content:center;
     padding:10px 16px;border:none;border-radius:12px;font-size:13px;font-weight:600;
@@ -425,7 +589,7 @@
   }
 
   /* =========================================================
-     上传（无进度回调）
+     上传
      ========================================================= */
   const ALLOWED_EXT = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'mp4', 'avi', 'mov', 'webm'];
 
@@ -667,13 +831,32 @@
         <input type="password" class="r2-input" data-cfg="password"
                placeholder="password" autocomplete="off">
       </div>
+
+      <div class="r2-switch-row">
+        <div class="r2-switch-label">
+          <div class="r2-switch-title">上传前压缩图片</div>
+          <div class="r2-switch-sub">JPG / PNG / WebP / BMP，转 JPEG；GIF、SVG 保持原样</div>
+        </div>
+        <div class="r2-switch" id="r2CompressSwitch" role="switch" tabindex="0" aria-label="上传前压缩图片"></div>
+      </div>
+
+      <div class="r2-quality" id="r2QualityWrap">
+        <span class="r2-quality-label">质量</span>
+        <div class="r2-quality-seg" id="r2QualitySeg">
+          <button type="button" data-q="0.6">小</button>
+          <button type="button" data-q="0.75">中</button>
+          <button type="button" data-q="0.85">大</button>
+          <button type="button" data-q="0.92">原</button>
+        </div>
+      </div>
+
       <div class="r2-actions-row">
         <div class="r2-btn r2-btn--primary" data-act="save" role="button" style="flex:1">保存</div>
         <div class="r2-btn" data-act="clearHistory" role="button" style="flex:1">清空记录</div>
       </div>
       <div style="font-size:11.5px;color:#64748b;text-align:center;margin-top:6px;line-height:1.5">
         单击上传 · 长按设置 · 拖动换位（左右吸附）<br>
-        凭据已本地缓存，下次上传自动使用
+        相同图片自动从本地缓存读取
       </div>
     </div>
   `;
@@ -734,9 +917,7 @@
     }
 
     function setFabPosition(x, y, animate) {
-      if (!animate) {
-        wrap.style.transition = 'none';
-      }
+      if (!animate) wrap.style.transition = 'none';
       wrap.style.right = 'auto';
       wrap.style.bottom = 'auto';
       wrap.style.left = x + 'px';
@@ -809,10 +990,29 @@
 
     function onPanelKeydown(e) { if (e.key === 'Escape') closePanel(); }
 
+    function syncCompressUI() {
+      const cfg = readCfg();
+      const sw = panel.querySelector('#r2CompressSwitch');
+      const qWrap = panel.querySelector('#r2QualityWrap');
+      if (!sw || !qWrap) return;
+
+      if (cfg.compress) sw.classList.add('on');
+      else sw.classList.remove('on');
+
+      if (cfg.compress) qWrap.classList.add('enabled');
+      else qWrap.classList.remove('enabled');
+
+      const seg = panel.querySelectorAll('#r2QualitySeg button');
+      seg.forEach((b) => {
+        const q = parseFloat(b.dataset.q);
+        b.classList.toggle('active', Math.abs(q - (cfg.compressQuality || 0.75)) < 0.001);
+      });
+    }
+
     function openPanel() {
       if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
 
-      const cfg = readCfg() || {};
+      const cfg = readCfg();
       panel.innerHTML = PANEL_HTML;
 
       const apiEl = panel.querySelector('[data-cfg="apiUrl"]');
@@ -821,6 +1021,31 @@
       if (apiEl) apiEl.value = cfg.apiUrl || '';
       if (userEl) userEl.value = cfg.username || '';
       if (passEl) passEl.value = cfg.password || '';
+
+      const sw = panel.querySelector('#r2CompressSwitch');
+      sw.addEventListener('click', () => {
+        const c = readCfg();
+        c.compress = !c.compress;
+        writeCfg(c);
+        syncCompressUI();
+        toast(c.compress ? '已开启压缩' : '已关闭压缩', 'info');
+      });
+      sw.addEventListener('keydown', (e) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault();
+          sw.click();
+        }
+      });
+
+      panel.querySelectorAll('#r2QualitySeg button').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const q = parseFloat(btn.dataset.q);
+          const c = readCfg();
+          c.compressQuality = q;
+          writeCfg(c);
+          syncCompressUI();
+        });
+      });
 
       panel.querySelectorAll('[data-act]').forEach((el) => {
         el.addEventListener('click', (e) => {
@@ -835,6 +1060,7 @@
         });
       });
 
+      syncCompressUI();
       panel.classList.add('show');
       document.addEventListener('keydown', onPanelKeydown);
     }
@@ -860,7 +1086,12 @@
       if (!apiUrl) { toast('请填写图床地址', 'warning'); return; }
       if (!/^https?:\/\//i.test(apiUrl)) { toast('地址需要 http(s):// 开头', 'warning'); return; }
 
-      writeCfg({ apiUrl, username, password });
+      const c = readCfg();
+      c.apiUrl = apiUrl;
+      c.username = username;
+      c.password = password;
+      writeCfg(c);
+
       fab.classList.remove('r2-fab--attention');
       toast('设置已保存', 'success');
       closePanel();
@@ -957,12 +1188,19 @@
       }
     });
 
+    /* ⭐️ 上传主流程（2.6.1）
+       1) 用【原文件】算 hash → 查缓存
+       2) 命中 → 复用 URL，跳过压缩 + 上传
+       3) 未命中 → 压缩（如启用）→ 上传
+    */
     async function handleFiles(files) {
       if (!hasValidCfg()) {
         toast('请先配置图床信息', 'warning');
         openPanel();
         return;
       }
+      const cfg = readCfg();
+
       const queue = files.filter((f) => {
         const ext = fileExt(f.name);
         if (ext && ALLOWED_EXT.indexOf(ext) === -1) {
@@ -973,23 +1211,60 @@
       });
       if (queue.length === 0) return;
 
-      let processed = 0, failed = 0;
       const total = queue.length;
+      let processed = 0, failed = 0, cached = 0, uploaded = 0, compressed = 0;
 
       fab.classList.add('r2-fab--busy');
 
       const CONCURRENCY = 2;
       const workers = Array.from({ length: Math.min(CONCURRENCY, total) }, async () => {
         while (queue.length) {
-          const file = queue.shift();
+          const rawFile = queue.shift();
           try {
+            // ⭐️ 1) 用【原文件】算 hash
+            let hash = '';
+            if (shouldCacheFile(rawFile)) {
+              hash = await fileHash(rawFile);
+            }
+
+            // ⭐️ 2) 查缓存
+            if (hash) {
+              const hit = lookupHistory(hash);
+              if (hit && hit.url) {
+                processed++;
+                cached++;
+                pendingUrls.push(hit.url);
+                pushHistory({
+                  url: hit.url,
+                  hash: hash,
+                  name: rawFile.name || hit.name || '',
+                  size: rawFile.size || hit.size || 0,
+                  ts: Date.now()
+                });
+                continue;   // 命中 → 不压缩、不上传
+              }
+            }
+
+            // ⭐️ 3) 未命中 → 压缩（如启用）
+            const { file, compressed: didCompress } = await maybeCompress(rawFile, cfg);
+            if (didCompress) compressed++;
+
+            // ⭐️ 4) 上传
             const url = await uploadFile(file);
             processed++;
+            uploaded++;
             pendingUrls.push(url);
-            pushHistory(url);
+
+            pushHistory({
+              url: url,
+              hash: hash || '',
+              name: rawFile.name || '',
+              size: rawFile.size || 0,
+              ts: Date.now()
+            });
           } catch (err) {
             processed++; failed++;
-            console.error('[R2] 上传失败:', file.name, err);
+            console.error('[R2] 上传失败:', rawFile.name, err);
             toast('上传失败：' + ((err && err.message) || '未知错误'), 'error');
           }
         }
@@ -1000,8 +1275,12 @@
       fab.classList.remove('r2-fab--busy');
 
       if (pendingUrls.length > 0) {
-        const okCount = pendingUrls.length;
-        toast(okCount > 1 ? ('上传成功 ' + okCount + ' 个') : '上传成功', 'success');
+        const parts = [];
+        if (uploaded > 0) parts.push('上传 ' + uploaded);
+        if (cached > 0) parts.push('缓存 ' + cached);
+        if (compressed > 0) parts.push('压缩 ' + compressed);
+        const summary = parts.length ? ('成功（' + parts.join(' · ') + '）') : '成功';
+        toast(summary, 'success', 2200);
         showImportBtn();
       }
     }
